@@ -31,14 +31,14 @@ thresholds:
 subscription_profiles:
   - name: "BlackFast TG+YT"
     path: "tg-yt"
-    filename: "BlackFast-TG-YT.yaml"
+    filename: "Global-BlackFast-TG-YT.yaml"
     group_prefix: "BlackFast TG+YT"
     required_services:
       - telegram
       - youtube
   - name: "BlackFast TG+YT+IG"
     path: "tg-yt-ig"
-    filename: "BlackFast-TG-YT-IG.yaml"
+    filename: "Global-BlackFast-TG-YT-IG.yaml"
     group_prefix: "BlackFast TG+YT+IG"
     required_services:
       - telegram
@@ -46,7 +46,7 @@ subscription_profiles:
       - instagram
   - name: "BlackFast FlashScore"
     path: "flashscore"
-    filename: "BlackFast-FlashScore.yaml"
+    filename: "Global-BlackFast-FlashScore.yaml"
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore

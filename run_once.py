@@ -102,7 +102,7 @@ async def run(config: dict[str, Any]) -> None:
 
     out_dir = Path("out")
     out_dir.mkdir(exist_ok=True)
-    (out_dir / "subscription.yaml").write_text(yaml_content, encoding="utf-8")
+    (out_dir / "Global-subscription.yaml").write_text(yaml_content, encoding="utf-8")
     logger.info(f"[3] Основная подписка: {len(default_final)} серверов")
 
     profiles = config.get("subscription_profiles", [])
