@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.pytest_cache/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Ядро sing-box (скачивается в workflow)
+bin/
+sing-box.exe
+
+# Временные файлы pipeline
+out/
+logs/
+*.log
+*.err
+pipeline_output.txt
+test_sub.txt
+
+# YAML-подписки в корне (генерируются, не хранить)
+/BlackFast-*.yaml
+/subscription.yaml
+
+# IDE
+.vscode/
+.idea/
+
+# Debug-скрипты
+check_subs.py
+debug_singbox.py
+diag_one.py
+test_*.py

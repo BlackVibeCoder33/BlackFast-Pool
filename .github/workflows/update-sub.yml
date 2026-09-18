@@ -1,0 +1,81 @@
+name: Update BlackFast Subscription
+
+on:
+  schedule:
+    - cron: '*/45 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Download sing-box
+        run: |
+          mkdir -p bin
+          SINGBOX_VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
+          curl -L -o singbox.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
+          tar -xzf singbox.tar.gz
+          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box bin/sing-box
+          chmod +x bin/sing-box
+          ln -sf sing-box bin/sing-box.exe
+          rm -rf singbox.tar.gz sing-box-${SINGBOX_VERSION}-linux-amd64
+
+      - name: Run pipeline
+        run: python run_once.py
+
+      - name: Upload subscription artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: blackfast-subscription
+          path: out/*.yaml
+          if-no-files-found: warn
+
+      - name: Update Gist - subscription.yaml
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/subscription.yaml
+          file_name: subscription.yaml
+
+      - name: Update Gist - BlackFast-TG-YT.yaml
+        if: hashFiles('out/BlackFast-TG-YT.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/BlackFast-TG-YT.yaml
+          file_name: BlackFast-TG-YT.yaml
+
+      - name: Update Gist - BlackFast-TG-YT-IG.yaml
+        if: hashFiles('out/BlackFast-TG-YT-IG.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/BlackFast-TG-YT-IG.yaml
+          file_name: BlackFast-TG-YT-IG.yaml
+
+      - name: Update Gist - BlackFast-FlashScore.yaml
+        if: hashFiles('out/BlackFast-FlashScore.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/BlackFast-FlashScore.yaml
+          file_name: BlackFast-FlashScore.yaml

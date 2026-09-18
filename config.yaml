@@ -1,0 +1,96 @@
+# ============================================================
+# Конфиг Karing Pool Builder
+# ============================================================
+
+subscriptions:
+  - name: "BLACK_VLESS_RUS_mobile"
+    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS_mobile.txt"
+    enabled: true
+  - name: "BLACK_SS+All_RUS"
+    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_SS%2BAll_RUS.txt"
+    enabled: true
+  - name: "kizyakbeta6BL"
+    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/refs/heads/main/kizyakbeta6BL.txt"
+    enabled: true
+  - name: "BLACK_VLESS_RUS"
+    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
+    enabled: true
+  - name: "wlunlocker-blacklist"
+    url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
+    enabled: true
+    
+
+thresholds:
+  max_ping_ms: 400
+  min_speed_mbps: 5
+  required_services:
+    - youtube
+    - telegram
+    - instagram
+
+subscription_profiles:
+  - name: "BlackFast TG+YT"
+    path: "tg-yt"
+    filename: "BlackFast-TG-YT.yaml"
+    group_prefix: "BlackFast TG+YT"
+    required_services:
+      - telegram
+      - youtube
+  - name: "BlackFast TG+YT+IG"
+    path: "tg-yt-ig"
+    filename: "BlackFast-TG-YT-IG.yaml"
+    group_prefix: "BlackFast TG+YT+IG"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+  - name: "BlackFast FlashScore"
+    path: "flashscore"
+    filename: "BlackFast-FlashScore.yaml"
+    group_prefix: "BlackFast FlashScore"
+    required_services:
+      - flashscore
+    exclude_name_contains:
+      - "🇳🇱"
+      - "netherlands"
+      - " nl-"
+
+services:
+  youtube:
+    url: "https://i.ytimg.com/generate_204"
+    expect_status: 204
+    timeout_seconds: 7
+  instagram:
+    url: "https://www.instagram.com/favicon.ico"
+    expect_status: 200
+    timeout_seconds: 7
+  telegram:
+    url: "https://web.telegram.org/"
+    expect_status: 200
+    timeout_seconds: 7
+  flashscore:
+    url: "https://www.flashscorekz.com/"
+    expect_status: 200
+    timeout_seconds: 7
+
+schedule:
+  update_interval_minutes: 45
+
+http_server:
+  host: "0.0.0.0"
+  port: 8080
+
+tcp_check:
+  concurrent: 200
+  timeout_seconds: 3
+
+speed_test:
+  concurrent: 8
+  test_url: "https://speed.cloudflare.com/__down?bytes=3000000"
+  test_bytes: 3000000
+  timeout_seconds: 15
+
+paths:
+  out_subscription: "out/subscription.yaml"
+  out_results: "out/results.json"
+  log_file: "logs/app.log"
