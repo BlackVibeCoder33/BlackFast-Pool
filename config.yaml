@@ -22,7 +22,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 7
+  min_speed_mbps: 5
   required_services:
     - youtube
     - telegram
