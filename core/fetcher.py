@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import json
+import re
 from typing import Any
 from urllib.parse import urlparse, parse_qs, unquote
 
@@ -260,6 +261,24 @@ def _parse_subscription(text: str, source_name: str) -> list[dict[str, Any]]:
         return _parse_uri_list(text, source_name)
     return _parse_yaml(text, source_name)
 
+import re
+
+_RU_NAME_PATTERNS = [
+    re.compile(r"russia", re.IGNORECASE),
+    re.compile(r"russian", re.IGNORECASE),
+    re.compile(r"🇷🇺"),
+    re.compile(r"\[ru\]", re.IGNORECASE),
+    re.compile(r"\bru-\d", re.IGNORECASE),
+    re.compile(r"\bru\d{3,}", re.IGNORECASE),
+]
+
+
+def _is_russian_proxy(proxy: dict[str, Any]) -> bool:
+    name = str(proxy.get("name") or "")
+    if not name:
+        return False
+    return any(pattern.search(name) for pattern in _RU_NAME_PATTERNS)
+
 def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen: set[str] = set()
     unique: list[dict[str, Any]] = []
@@ -295,6 +314,12 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
             logger.error(f"Ошибка скачивания '{sub['name']}': {result}")
             continue
         all_proxies.extend(_parse_subscription(result, sub["name"]))
+
+    before_ru = len(all_proxies)
+    all_proxies = [p for p in all_proxies if not _is_russian_proxy(p)]
+    ru_filtered = before_ru - len(all_proxies)
+    if ru_filtered:
+        logger.info(f"Фильтр РФ: убрано {ru_filtered} серверов")
 
     return _dedupe(all_proxies)
 
