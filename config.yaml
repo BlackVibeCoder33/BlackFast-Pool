@@ -85,10 +85,10 @@ tcp_check:
   timeout_seconds: 3
 
 speed_test:
-  concurrent: 8
-  test_url: "https://speed.cloudflare.com/__down?bytes=8000000"
-  test_bytes: 8000000
-  timeout_seconds: 25
+  concurrent: 6
+  test_url: "https://speed.cloudflare.com/__down?bytes=2000000"
+  test_bytes: 2000000
+  timeout_seconds: 20
 
 paths:
   out_subscription: "out/subscription.yaml"
