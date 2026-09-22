@@ -16,7 +16,7 @@ from core.paths import base_dir
 SINGBOX_BIN = base_dir() / "bin" / "sing-box.exe"
 HTTP_PROXY_BASE = 10800
 PORT_POOL_SIZE = 16
-BATCH_PAUSE_SEC = 0.5
+BATCH_PAUSE_SEC = 1.0
 STARTUP_TIMEOUT_SEC = 15.0
 
 
