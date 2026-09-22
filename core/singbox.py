@@ -16,6 +16,12 @@ from core.paths import base_dir
 SINGBOX_BIN = base_dir() / "bin" / "sing-box.exe"
 HTTP_PROXY_BASE = 10800
 PORT_POOL_SIZE = 16
+_ANTI_DPI_CONFIG: dict[str, Any] = {}
+
+
+def set_anti_dpi(config: dict[str, Any]) -> None:
+    global _ANTI_DPI_CONFIG
+    _ANTI_DPI_CONFIG = config or {}
 BATCH_PAUSE_SEC = 1.0
 STARTUP_TIMEOUT_SEC = 15.0
 
@@ -55,6 +61,16 @@ def _build_tls(proxy: dict[str, Any]) -> dict[str, Any] | None:
         tls["insecure"] = True
     elif not ro and not sni and _is_ip(str(proxy.get("server", ""))):
         tls["insecure"] = True
+
+    if _ANTI_DPI_CONFIG.get("enabled") and not ro:
+        if _ANTI_DPI_CONFIG.get("fragment"):
+            tls["fragment"] = True
+        delay = _ANTI_DPI_CONFIG.get("fragment_fallback_delay")
+        if delay:
+            tls["fragment_fallback_delay"] = delay
+        if _ANTI_DPI_CONFIG.get("record_fragment"):
+            tls["record_fragment"] = True
+
     return tls
 
 
