@@ -45,13 +45,12 @@ jobs:
           path: out/*.yaml
           if-no-files-found: warn
 
-      - name: Update Gist - Global-subscription.yaml
+           - name: Update Gist - Global-subscription.yaml
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-subscription.yaml
-          file_name: Global-subscription.yaml
 
       - name: Update Gist - Global-BlackFast-TG-YT.yaml
         if: hashFiles('out/Global-BlackFast-TG-YT.yaml') != ''
@@ -60,7 +59,6 @@ jobs:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-TG-YT.yaml
-          file_name: Global-BlackFast-TG-YT.yaml
 
       - name: Update Gist - Global-BlackFast-TG-YT-IG.yaml
         if: hashFiles('out/Global-BlackFast-TG-YT-IG.yaml') != ''
@@ -69,7 +67,6 @@ jobs:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-TG-YT-IG.yaml
-          file_name: Global-BlackFast-TG-YT-IG.yaml
 
       - name: Update Gist - Global-BlackFast-FlashScore.yaml
         if: hashFiles('out/Global-BlackFast-FlashScore.yaml') != ''
@@ -78,4 +75,3 @@ jobs:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-FlashScore.yaml
-          file_name: Global-BlackFast-FlashScore.yaml
