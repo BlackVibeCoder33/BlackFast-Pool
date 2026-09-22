@@ -47,7 +47,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
+  min_speed_mbps: 3
   required_services:
     - youtube
     - telegram
@@ -81,10 +81,6 @@ subscription_profiles:
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
-    exclude_name_contains:
-      - "🇳🇱"
-      - "netherlands"
-      - " nl-"
 
 services:
   youtube:
@@ -92,7 +88,7 @@ services:
     expect_status: 204
     timeout_seconds: 7
   instagram:
-    url: "https://www.instagram.com/favicon.ico"
+    url: "https://www.instagram.com/robots.txt"
     expect_status: 200
     timeout_seconds: 7
   telegram:
