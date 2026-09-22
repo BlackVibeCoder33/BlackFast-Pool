@@ -45,7 +45,7 @@ jobs:
           path: out/*.yaml
           if-no-files-found: warn
 
-           - name: Update Gist - Global-subscription.yaml
+      - name: Update Gist - Global-subscription.yaml
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.GIST_TOKEN }}
