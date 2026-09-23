@@ -75,3 +75,35 @@ jobs:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-FlashScore.yaml
+      
+      - name: Update Gist - Global-BlackFast-LS.yaml
+        if: hashFiles('out/Global-BlackFast-LS.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/Global-BlackFast-LS.yaml
+
+      - name: Update Gist - Global-BlackFast-TG-YT-LS.yaml
+        if: hashFiles('out/Global-BlackFast-TG-YT-LS.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/Global-BlackFast-TG-YT-LS.yaml
+
+      - name: Update Gist - Global-BlackFast-TG-YT-IG-LS.yaml
+        if: hashFiles('out/Global-BlackFast-TG-YT-IG-LS.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/Global-BlackFast-TG-YT-IG-LS.yaml
+
+      - name: Update Gist - Global-BlackFast-FlashScore-LS.yaml
+        if: hashFiles('out/Global-BlackFast-FlashScore-LS.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/Global-BlackFast-FlashScore-LS.yaml    
