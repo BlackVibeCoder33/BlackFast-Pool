@@ -29,21 +29,34 @@ async def _check_service(
         return False, 0.0, type(e).__name__
 
 
-async def _check_one_proxy(
-    proxy: dict[str, Any],
-    http_port: int,
+async def _youtube_download_test(
     session: aiohttp.ClientSession,
+    proxy_url: str,
+    url: str,
+    target_bytes: int,
+    timeout: float,
+) -> bool:
+    total = 0
+    try:
+        t = aiohttp.ClientTimeout(total=timeout, sock_connect=5, sock_read=timeout)
+        async with session.get(url, proxy=proxy_url, timeout=t) as resp:
+            if resp.status >= 400:
+                return False
+            async for chunk in resp.content.iter_chunked(16384):
+                total += len(chunk)
+                if total >= target_bytes:
+                    return True
+    except Exception:
+        return False
+    return total >= target_bytes
+
+
+async def _run_services(
+    session: aiohttp.ClientSession,
+    proxy_url: str,
     services: dict[str, Any],
     timeout_default: float,
 ) -> dict[str, Any]:
-    if proxy.get("_batch_error"):
-        proxy["_services"] = {
-            svc: {"ok": False, "ms": 0.0, "status": proxy["_batch_error"]}
-            for svc in services
-        }
-        return proxy
-
-    proxy_url = f"http://127.0.0.1:{http_port}"
     svc_names = list(services.keys())
     tasks = []
     for svc_name in svc_names:
@@ -60,6 +73,70 @@ async def _check_one_proxy(
         else:
             ok_s, ms, status = r
             results[svc_name] = {"ok": ok_s, "ms": ms, "status": status}
+    return results
+
+
+def _all_connect_errors(results: dict[str, Any]) -> bool:
+    if not results:
+        return False
+    for v in results.values():
+        st = str(v.get("status") or "")
+        if st in ("timeout", "TimeoutError"):
+            return False
+        if v.get("ok"):
+            return False
+    return any(
+        str(v.get("status") or "") in (
+            "ClientConnectorError",
+            "ClientConnectionError",
+            "ConnectionResetError",
+            "ServerDisconnectedError",
+        )
+        for v in results.values()
+    )
+
+
+async def _check_one_proxy(
+    proxy: dict[str, Any],
+    http_port: int,
+    session: aiohttp.ClientSession,
+    services: dict[str, Any],
+    timeout_default: float,
+    scfg: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    scfg = scfg or {}
+
+    if proxy.get("_batch_error"):
+        proxy["_services"] = {
+            svc: {"ok": False, "ms": 0.0, "status": proxy["_batch_error"]}
+            for svc in services
+        }
+        return proxy
+
+    proxy_url = f"http://127.0.0.1:{http_port}"
+
+    results = await _run_services(
+        session, proxy_url, services, timeout_default
+    )
+
+    retry_on_error = bool(scfg.get("retry_on_connect_error", False))
+    if retry_on_error and _all_connect_errors(results):
+        await asyncio.sleep(0.5)
+        results = await _run_services(
+            session, proxy_url, services, timeout_default
+        )
+
+    yt_cfg = services.get("youtube", {}) or {}
+    dl_url = yt_cfg.get("download_test_url")
+    dl_bytes = int(yt_cfg.get("download_test_bytes", 0) or 0)
+    dl_timeout = float(yt_cfg.get("download_test_timeout_seconds", 12))
+    if dl_url and dl_bytes > 0 and "youtube" in results:
+        dl_ok = await _youtube_download_test(
+            session, proxy_url, dl_url, dl_bytes, dl_timeout
+        )
+        results["youtube"]["download_ok"] = dl_ok
+        if not dl_ok:
+            results["youtube"]["ok"] = False
 
     proxy["_services"] = results
     summary = " ".join(
@@ -70,11 +147,19 @@ async def _check_one_proxy(
     return proxy
 
 
+def get_service_concurrent(cfg: dict[str, Any], is_github: bool) -> int:
+    scfg = cfg.get("service_check", {}) or {}
+    if is_github:
+        return int(scfg.get("concurrent_github", 8))
+    return int(scfg.get("concurrent_pc", 6))
+
+
 async def service_check_all(
     proxies: list[dict[str, Any]],
     services: dict[str, Any],
-    concurrent: int = 4,
+    concurrent: int = 6,
     timeout_default: float = 10.0,
+    scfg: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     if not proxies or not services:
         return proxies
@@ -86,7 +171,7 @@ async def service_check_all(
 
     async def _tester_bound(proxy, http_port, session):
         return await _check_one_proxy(
-            proxy, http_port, session, services, timeout_default
+            proxy, http_port, session, services, timeout_default, scfg
         )
 
     results = await run_batch_test(

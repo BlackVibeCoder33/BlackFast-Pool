@@ -279,6 +279,16 @@ def _is_russian_proxy(proxy: dict[str, Any]) -> bool:
         return False
     return any(pattern.search(name) for pattern in _RU_NAME_PATTERNS)
 
+
+_SNI_NAME_PATTERN = re.compile(r"\bSNI\b", re.IGNORECASE)
+
+
+def _is_sni_proxy(proxy: dict[str, Any]) -> bool:
+    name = str(proxy.get("name") or "")
+    if not name:
+        return False
+    return bool(_SNI_NAME_PATTERN.search(name))
+
 def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen: set[str] = set()
     unique: list[dict[str, Any]] = []
@@ -320,6 +330,12 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
     ru_filtered = before_ru - len(all_proxies)
     if ru_filtered:
         logger.info(f"Фильтр РФ: убрано {ru_filtered} серверов")
+
+    before_sni = len(all_proxies)
+    all_proxies = [p for p in all_proxies if not _is_sni_proxy(p)]
+    sni_filtered = before_sni - len(all_proxies)
+    if sni_filtered:
+        logger.info(f"Фильтр SNI: убрано {sni_filtered} серверов")
 
     return _dedupe(all_proxies)
 

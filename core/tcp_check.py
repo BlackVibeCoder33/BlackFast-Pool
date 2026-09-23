@@ -48,7 +48,7 @@ async def _check_one(
 async def tcp_check_all(
     proxies: list[dict[str, Any]],
     concurrent: int = 200,
-    timeout: float = 3.0,
+    timeout: float = 4.0,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if not proxies:
         return [], []

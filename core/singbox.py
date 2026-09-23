@@ -22,7 +22,7 @@ _ANTI_DPI_CONFIG: dict[str, Any] = {}
 def set_anti_dpi(config: dict[str, Any]) -> None:
     global _ANTI_DPI_CONFIG
     _ANTI_DPI_CONFIG = config or {}
-BATCH_PAUSE_SEC = 1.0
+BATCH_PAUSE_SEC = 0.3
 STARTUP_TIMEOUT_SEC = 15.0
 
 
