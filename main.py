@@ -24,9 +24,15 @@ from core.filter_rank import (
     filter_and_rank,
     sort_alphabetically,
 )
-from core.service_check import service_check_all
+from core.cache import (
+    filter_banned,
+    load_cache,
+    save_cache,
+    update_after_run,
+)
+from core.service_check import get_service_concurrent, service_check_all
 from core.singbox import set_anti_dpi
-from core.speed_test import speed_test_all
+from core.speed_test import get_speed_concurrent, speed_test_all
 from core.tcp_check import tcp_check_all
 
 
@@ -73,10 +79,30 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             logger.info(f"[2] Живых и ≤ {max_ping} мс: {len(alive)}")
 
             st = config.get("speed_test", {})
-            concurrent = int(st.get("concurrent", 4))
+            scfg = config.get("service_check", {})
+            is_github = False
+            svc_concurrent = get_service_concurrent(config, is_github)
+            spd_concurrent = get_speed_concurrent(config, is_github)
+
+            cache_cfg = config.get("cache", {}) or {}
+            cache_enabled = bool(cache_cfg.get("enabled", False))
+            cache_path = base_dir() / cache_cfg.get(
+                "cache_file", "out/cache.json"
+            )
+            cache_data = load_cache(cache_path) if cache_enabled else {"servers": {}}
+
+            if cache_enabled:
+                alive = filter_banned(
+                    alive,
+                    cache_data,
+                    float(cache_cfg.get("ban_duration_hours", 2)),
+                )
 
             checked = await service_check_all(
-                alive, config["services"], concurrent=concurrent
+                alive,
+                config["services"],
+                concurrent=svc_concurrent,
+                scfg=scfg,
             )
 
             default_required_pre = config["thresholds"].get(
@@ -100,13 +126,38 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                 f"из {len(checked)}"
             )
 
-            test_url = st.get(
-                "test_url", "https://speed.cloudflare.com/__down?bytes=3000000"
-            )
-            timeout = float(st.get("timeout_seconds", 15))
+            test_urls = st.get("test_urls")
+            if not test_urls:
+                test_urls = [
+                    st.get(
+                        "test_url",
+                        "https://speed.cloudflare.com/__down?bytes=2000000",
+                    )
+                ]
+            timeout = float(st.get("timeout_seconds", 20))
+            retest = int(st.get("retest_count", 2))
+            retest_pause = float(st.get("retest_pause_seconds", 0))
+            min_bytes = int(st.get("min_measure_bytes", 300000))
+            peak_win = float(st.get("peak_window_seconds", 0.5))
             speed_results = await speed_test_all(
-                relevant, test_url=test_url, timeout=timeout, concurrent=concurrent
+                relevant,
+                test_urls=test_urls,
+                timeout=timeout,
+                concurrent=spd_concurrent,
+                retest_count=retest,
+                retest_pause_seconds=retest_pause,
+                min_bytes=min_bytes,
+                peak_window_sec=peak_win,
             )
+
+            if cache_enabled:
+                cache_data = update_after_run(
+                    speed_results,
+                    cache_data,
+                    int(cache_cfg.get("ban_after_consecutive_failures", 3)),
+                    float(cache_cfg.get("ban_duration_hours", 2)),
+                )
+                save_cache(cache_path, cache_data)
 
             min_speed = config["thresholds"]["min_speed_mbps"]
             max_ping_val = config["thresholds"]["max_ping_ms"]

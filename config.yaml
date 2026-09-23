@@ -31,7 +31,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
+  min_speed_mbps: 3
   required_services:
     - youtube
     - telegram
@@ -126,13 +126,31 @@ http_server:
 
 tcp_check:
   concurrent: 200
-  timeout_seconds: 3
+  timeout_seconds: 4
+
+service_check:
+  concurrent_pc: 6
+  concurrent_github: 8
+  retry_on_connect_error: true
 
 speed_test:
-  concurrent: 6
-  test_url: "https://speed.cloudflare.com/__down?bytes=2000000"
-  test_bytes: 2000000
+  concurrent_pc: 6
+  concurrent_github: 8
+  test_urls:
+    - "https://speed.cloudflare.com/__down?bytes=2000000"
+    - "https://speed.cloudflare.com/__down?bytes=1000000"
+    - "https://speed.cloudflare.com/__down?bytes=500000"
   timeout_seconds: 20
+  retest_count: 2
+  retest_pause_seconds: 2
+  min_measure_bytes: 300000
+  peak_window_seconds: 0.5
+
+cache:
+  enabled: true
+  ban_after_consecutive_failures: 3
+  ban_duration_hours: 2
+  cache_file: "out/cache.json"
 
 paths:
   out_subscription: "out/subscription.yaml"
