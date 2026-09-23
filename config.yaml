@@ -13,19 +13,6 @@ subscriptions:
   - name: "igareck-SS-All"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_SS%2BAll_RUS_clash_rudirect.yaml"
     enabled: true
-  # --- IGARECK GLOBAL (White Lists) ---
-  - name: "igareck-Vless-Reality-WL"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Export/Clash/GLOBAL/Vless-Reality-White-Lists-Rus-Mobile-clash-global.yaml"
-    enabled: true
-  - name: "igareck-WHITE-CIDR-all"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Export/Clash/GLOBAL/WHITE-CIDR-RU-all-clash-global.yaml"
-    enabled: true
-  - name: "igareck-WHITE-CIDR-checked"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Export/Clash/GLOBAL/WHITE-CIDR-RU-checked-clash-global.yaml"
-    enabled: true
-  - name: "igareck-WHITE-SNI-all"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Export/Clash/GLOBAL/WHITE-SNI-RU-all-clash-global.yaml"
-    enabled: true
   # --- KIZYAK ---
   - name: "kizyak-beta6BL"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta6BL.txt"
@@ -39,9 +26,6 @@ subscriptions:
   # --- WLUNLOCKER ---
   - name: "wlunlocker-blacklist"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
-    enabled: true
-  - name: "wlunlocker-whitelist"
-    url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/whitelist_all.txt"
     enabled: true
     
 
