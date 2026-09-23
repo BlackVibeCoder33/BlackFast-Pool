@@ -47,7 +47,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
+  min_speed_mbps: 3
   required_services:
     - youtube
     - telegram
@@ -81,6 +81,39 @@ subscription_profiles:
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
+  - name: "BlackFast LS"
+    path: "ls"
+    filename: "Global-BlackFast-LS.yaml"
+    group_prefix: "BlackFast LS"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+    min_speed_mbps: 0.5
+  - name: "BlackFast TG+YT LS"
+    path: "tg-yt-ls"
+    filename: "Global-BlackFast-TG-YT-LS.yaml"
+    group_prefix: "BlackFast TG+YT LS"
+    required_services:
+      - telegram
+      - youtube
+    min_speed_mbps: 0.5
+  - name: "BlackFast TG+YT+IG LS"
+    path: "tg-yt-ig-ls"
+    filename: "Global-BlackFast-TG-YT-IG-LS.yaml"
+    group_prefix: "BlackFast TG+YT+IG LS"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+    min_speed_mbps: 0.5
+  - name: "BlackFast FlashScore LS"
+    path: "flashscore-ls"
+    filename: "Global-BlackFast-FlashScore-LS.yaml"
+    group_prefix: "BlackFast FlashScore LS"
+    required_services:
+      - flashscore
+    min_speed_mbps: 0.5
 
 services:
   youtube:

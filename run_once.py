@@ -103,7 +103,10 @@ async def run(config: dict[str, Any]) -> None:
     out_dir = Path("out")
     out_dir.mkdir(exist_ok=True)
     (out_dir / "Global-subscription.yaml").write_text(yaml_content, encoding="utf-8")
-    logger.info(f"[3] Основная подписка: {len(default_final)} серверов")
+    logger.info(
+        f"[3] Основная подписка: {len(default_final)} записей "
+        f"({len(default_passed)} уникальных серверов)"
+    )
 
     profiles = config.get("subscription_profiles", [])
     if profiles:
@@ -122,7 +125,10 @@ async def run(config: dict[str, Any]) -> None:
             profile_yaml = build_subscription(final_list, group_prefix=prefix)
             filename = profile.get("filename", f"{path}.yaml")
             (out_dir / filename).write_text(profile_yaml, encoding="utf-8")
-            logger.info(f"[profiles] '{path}': {len(final_list)} серверов")
+            logger.info(
+                f"[profiles] '{path}': {len(final_list)} записей "
+                f"({len(selected)} уникальных)"
+            )
 
     elapsed = time.time() - t_start
     logger.info(f"[4] Pipeline завершён за {elapsed:.0f} с")
@@ -134,6 +140,9 @@ async def main() -> None:
 
     with open("config.yaml", encoding="utf-8") as f:
         config = yaml.safe_load(f)
+
+    from core.singbox import set_anti_dpi
+    set_anti_dpi(config.get("anti_dpi", {}))
 
     await run(config)
 

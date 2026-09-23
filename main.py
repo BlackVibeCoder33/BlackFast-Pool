@@ -25,6 +25,7 @@ from core.filter_rank import (
     sort_alphabetically,
 )
 from core.service_check import service_check_all
+from core.singbox import set_anti_dpi
 from core.speed_test import speed_test_all
 from core.tcp_check import tcp_check_all
 
@@ -137,7 +138,8 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     sources[s] = sources.get(s, 0) + 1
                 source_str = ", ".join(f"{k}={v}" for k, v in sources.items())
                 logger.info(
-                    f"[3] Основная подписка: {len(default_final)} серверов "
+                    f"[3] Основная подписка: {len(default_final)} записей "
+                    f"({len(default_passed)} уникальных серверов) "
                     f"[{source_str}] (золотой пул обновлён)"
                 )
             else:
@@ -193,7 +195,8 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     out_path.parent.mkdir(parents=True, exist_ok=True)
                     out_path.write_text(yaml_content, encoding="utf-8")
                     logger.info(
-                        f"[profiles] '{path}': {len(final_list)} серверов → {out_path.name}"
+                        f"[profiles] '{path}': {len(final_list)} записей "
+                        f"({len(selected)} уникальных) → {out_path.name}"
                     )
                 state.profiles_yaml = new_profiles_yaml
                 state.profiles_count = new_profiles_count
@@ -302,6 +305,11 @@ async def main() -> None:
 
     with open(base_dir() / "config.yaml", encoding="utf-8") as f:
         config = yaml.safe_load(f)
+
+    from core.singbox import set_anti_dpi
+    set_anti_dpi(config.get("anti_dpi", {}))
+
+    asyncio.create_task(run_pipeline(config))
 
     golden_path = base_dir() / "out" / "golden.yaml"
     if golden_path.exists():
