@@ -31,6 +31,7 @@ def build_profiles(
     for profile in profiles:
         path = profile["path"]
         required = profile["required_services"]
+        profile_min_speed = float(profile.get("min_speed_mbps", min_speed_mbps))
         exclude_patterns = [
             str(x).lower()
             for x in profile.get("exclude_name_contains", [])
@@ -43,7 +44,7 @@ def build_profiles(
             svc = p.get("_services", {})
             if not all(svc.get(req, {}).get("ok") for req in required):
                 continue
-            if p.get("_speed_mbps", 0) < min_speed_mbps:
+            if p.get("_speed_mbps", 0) < profile_min_speed:
                 continue
             if exclude_patterns:
                 haystack = f"{p.get('name') or ''} {p.get('server') or ''}".lower()
@@ -65,8 +66,8 @@ def build_profiles(
             else ""
         )
         logger.info(
-            f"Профиль '{path}' ({'+'.join(required)}): {len(selected)} серверов "
-            f"[{source_str}]{excluded_str}"
+            f"Профиль '{path}' ({'+'.join(required)}) min_speed={profile_min_speed:g}: "
+            f"{len(selected)} серверов [{source_str}]{excluded_str}"
         )
     return result
 
