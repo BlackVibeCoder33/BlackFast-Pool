@@ -60,10 +60,25 @@ async def run_pipeline(config: dict[str, Any]) -> None:
         t_start = time.time()
 
         try:
-            proxies = await fetch_all(config["subscriptions"])
-            logger.info(f"[1] После парсинга: {len(proxies)}")
+            proxies_all = await fetch_all(config["subscriptions"])
+            logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
-            representatives, expansion_map = group_by_server_port(proxies)
+            passthrough_types = set(config.get("passthrough_types", []))
+            passthrough = [
+                p for p in proxies_all if p.get("type") in passthrough_types
+            ]
+            testable = [
+                p for p in proxies_all
+                if p.get("type") not in passthrough_types
+            ]
+            if passthrough_types:
+                logger.info(
+                    f"[1.5] Passthrough "
+                    f"({','.join(sorted(passthrough_types))}): "
+                    f"{len(passthrough)}, тестируемых: {len(testable)}"
+                )
+
+            representatives, expansion_map = group_by_server_port(testable)
             logger.info(
                 f"[1.5] Уникальных (server, port): {len(representatives)}"
             )
@@ -170,7 +185,7 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                 default_passed, expansion_map
             )
             default_final = sort_alphabetically(
-                ensure_unique_names(list(default_expanded))
+                ensure_unique_names(list(default_expanded) + passthrough)
             )
             if default_final:
                 yaml_content = build_subscription(
@@ -231,7 +246,7 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     selected = profile_selections.get(path, [])
                     expanded = expand_representatives(selected, expansion_map)
                     final_list = sort_alphabetically(
-                        ensure_unique_names(list(expanded))
+                        ensure_unique_names(list(expanded) + passthrough)
                     )
                     if not final_list:
                         logger.warning(f"[profiles] '{path}' пуст — пропуск")
@@ -378,9 +393,6 @@ async def main() -> None:
                 )
         except Exception as e:
             logger.warning(f"Не удалось загрузить золотой пул: {e}")
-
-    asyncio.create_task(run_pipeline(config))
-
 
     interval = int(config["schedule"]["update_interval_minutes"])
     scheduler = AsyncIOScheduler()

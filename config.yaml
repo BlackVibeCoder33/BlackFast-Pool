@@ -99,6 +99,9 @@ subscription_profiles:
       - flashscore
     min_speed_mbps: 0.5
 
+passthrough_types:
+  - hysteria2
+
 services:
   youtube:
     url: "https://i.ytimg.com/generate_204"

@@ -40,10 +40,23 @@ async def run(config: dict[str, Any]) -> None:
     logger.info("=" * 60)
     t_start = time.time()
 
-    proxies = await fetch_all(config["subscriptions"])
-    logger.info(f"[1] После парсинга: {len(proxies)}")
+    proxies_all = await fetch_all(config["subscriptions"])
+    logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
-    representatives, expansion_map = group_by_server_port(proxies)
+    passthrough_types = set(config.get("passthrough_types", []))
+    passthrough = [
+        p for p in proxies_all if p.get("type") in passthrough_types
+    ]
+    testable = [
+        p for p in proxies_all if p.get("type") not in passthrough_types
+    ]
+    if passthrough_types:
+        logger.info(
+            f"[1.5] Passthrough ({','.join(sorted(passthrough_types))}): "
+            f"{len(passthrough)}, тестируемых: {len(testable)}"
+        )
+
+    representatives, expansion_map = group_by_server_port(testable)
     logger.info(f"[1.5] Уникальных (server, port): {len(representatives)}")
 
     tcp_cfg = config.get("tcp_check", {})
@@ -139,7 +152,7 @@ async def run(config: dict[str, Any]) -> None:
     default_passed = filter_and_rank(speed_results, default_required, min_speed)
     default_expanded = expand_representatives(default_passed, expansion_map)
     default_final = sort_alphabetically(
-        ensure_unique_names(list(default_expanded))
+        ensure_unique_names(list(default_expanded) + passthrough)
     )
 
     if not default_final:
@@ -167,7 +180,7 @@ async def run(config: dict[str, Any]) -> None:
             selected = selections.get(path, [])
             expanded = expand_representatives(selected, expansion_map)
             final_list = sort_alphabetically(
-                ensure_unique_names(list(expanded))
+                ensure_unique_names(list(expanded) + passthrough)
             )
             if not final_list:
                 logger.warning(f"Профиль '{path}' пуст — пропуск")
