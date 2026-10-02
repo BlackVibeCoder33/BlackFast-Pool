@@ -31,7 +31,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
+  min_speed_mbps: 3
 
 anti_dpi:
   enabled: true
@@ -115,9 +115,6 @@ services:
     url: "https://www.youtube.com/generate_204"
     expect_status: 204
     timeout_seconds: 7
-    download_test_url: "https://www.youtube.com/favicon.ico"
-    download_test_bytes: 200000
-    download_test_timeout_seconds: 12
   instagram:
     url: "https://www.instagram.com/robots.txt"
     expect_status: 200
