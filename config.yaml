@@ -70,6 +70,7 @@ subscription_profiles:
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
+    allow_russian: true
   - name: "BlackFast TG+YT LS"
     path: "tg-yt-ls"
     filename: "Global-BlackFast-TG-YT-LS.yaml"
@@ -104,6 +105,7 @@ subscription_profiles:
     required_services:
       - flashscore
     min_speed_mbps: 0.5
+    allow_russian: true
 
 passthrough_types:
   - hysteria2

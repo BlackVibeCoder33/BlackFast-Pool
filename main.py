@@ -64,16 +64,25 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             passthrough = [
                 p for p in proxies_all if p.get("type") in passthrough_types
             ]
+            russian = [
+                p for p in proxies_all
+                if p.get("_is_russian")
+                and p.get("type") not in passthrough_types
+            ]
             testable = [
                 p for p in proxies_all
                 if p.get("type") not in passthrough_types
+                and not p.get("_is_russian")
             ]
             if passthrough_types:
                 logger.info(
                     f"[1.5] Passthrough "
                     f"({','.join(sorted(passthrough_types))}): "
-                    f"{len(passthrough)}, тестируемых: {len(testable)}"
+                    f"{len(passthrough)}, тестируемых: {len(testable)}, "
+                    f"РФ: {len(russian)}"
                 )
+
+            russian_reps, _ = group_by_server_port(russian)
 
             representatives, expansion_map = group_by_server_port(testable)
             logger.info(
@@ -175,8 +184,14 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     prefix = profile.get("group_prefix", name)
                     selected = profile_selections.get(path, [])
                     expanded = expand_representatives(selected, expansion_map)
+                    include_russian = bool(
+                        profile.get("allow_russian", False)
+                    )
+                    base_list = list(expanded) + passthrough
+                    if include_russian:
+                        base_list += russian_reps
                     final_list = sort_alphabetically(
-                        ensure_unique_names(list(expanded) + passthrough)
+                        ensure_unique_names(base_list)
                     )
                     if not final_list:
                         logger.warning(f"[profiles] '{path}' пуст — пропуск")
@@ -201,7 +216,8 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             elapsed = time.time() - t_start
             logger.info(
                 f"[4] Pipeline завершён за {elapsed:.0f} с. "
-                f"{len(state.profiles_yaml)} профилей"
+                f"{len(state.profiles_yaml)} профилей, "
+                f"РФ-серверов в flashscore: {len(russian_reps)}"
             )
 
             local_ip = _get_local_ip()
