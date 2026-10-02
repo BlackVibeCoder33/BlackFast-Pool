@@ -261,7 +261,6 @@ def _parse_subscription(text: str, source_name: str) -> list[dict[str, Any]]:
         return _parse_uri_list(text, source_name)
     return _parse_yaml(text, source_name)
 
-import re
 
 _RU_NAME_PATTERNS = [
     re.compile(r"russia", re.IGNORECASE),
@@ -319,7 +318,17 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
             continue
         all_proxies.extend(_parse_subscription(result, sub["name"]))
 
+    deduped = _dedupe(all_proxies)
 
+    ru_count = 0
+    for p in deduped:
+        if _is_russian_proxy(p):
+            p["_is_russian"] = True
+            ru_count += 1
+    if ru_count:
+        logger.info(f"Помечено РФ-серверов: {ru_count}")
+
+    return deduped
 
 
 def group_by_server_port(
@@ -353,5 +362,7 @@ def expand_representatives(
             p["_services"] = rep.get("_services")
             p["_speed_mbps"] = rep.get("_speed_mbps")
             p["_speed_error"] = rep.get("_speed_error")
+            if rep.get("_is_russian"):
+                p["_is_russian"] = True
             expanded.append(p)
     return expanded
