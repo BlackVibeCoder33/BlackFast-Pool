@@ -44,12 +44,12 @@ async def run(config: dict[str, Any]) -> None:
 
     passthrough_types = set(config.get("passthrough_types", []))
     passthrough = [
-        p for p in proxies_all if p.get("type") in passthrough_types
-    ]
-    russian = [
         p for p in proxies_all
-        if p.get("_is_russian")
-        and p.get("type") not in passthrough_types
+        if p.get("type") in passthrough_types
+        and not p.get("_is_russian")
+    ]
+    russian_all = [
+        p for p in proxies_all if p.get("_is_russian")
     ]
     testable = [
         p for p in proxies_all
@@ -60,10 +60,10 @@ async def run(config: dict[str, Any]) -> None:
         logger.info(
             f"[1.5] Passthrough ({','.join(sorted(passthrough_types))}): "
             f"{len(passthrough)}, тестируемых: {len(testable)}, "
-            f"РФ: {len(russian)}"
+            f"РФ (все типы): {len(russian_all)}"
         )
 
-    russian_reps, _ = group_by_server_port(russian)
+    russian_reps, _ = group_by_server_port(russian_all)
 
     representatives, expansion_map = group_by_server_port(testable)
     logger.info(f"[1.5] Уникальных (server, port): {len(representatives)}")
