@@ -263,6 +263,26 @@ def _parse_subscription(text: str, source_name: str) -> list[dict[str, Any]]:
 
 import re
 
+_RU_NAME_PATTERNS = [
+    re.compile(r"russia", re.IGNORECASE),
+    re.compile(r"russian", re.IGNORECASE),
+    re.compile(r"россия", re.IGNORECASE),
+    re.compile(r"moscow", re.IGNORECASE),
+    re.compile(r"москва", re.IGNORECASE),
+    re.compile(r"🇷🇺"),
+    re.compile(r"\[ru\]", re.IGNORECASE),
+    re.compile(r"\bru-\d", re.IGNORECASE),
+    re.compile(r"\bru\d{3,}", re.IGNORECASE),
+]
+
+
+def _is_russian_proxy(proxy: dict[str, Any]) -> bool:
+    name = str(proxy.get("name") or "")
+    if not name:
+        return False
+    return any(pattern.search(name) for pattern in _RU_NAME_PATTERNS)
+
+
 def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen: set[str] = set()
     unique: list[dict[str, Any]] = []
@@ -299,7 +319,7 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
             continue
         all_proxies.extend(_parse_subscription(result, sub["name"]))
 
-    return _dedupe(all_proxies)
+
 
 
 def group_by_server_port(
