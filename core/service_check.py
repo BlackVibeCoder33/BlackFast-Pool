@@ -126,18 +126,6 @@ async def _check_one_proxy(
             session, proxy_url, services, timeout_default
         )
 
-    yt_cfg = services.get("youtube", {}) or {}
-    dl_url = yt_cfg.get("download_test_url")
-    dl_bytes = int(yt_cfg.get("download_test_bytes", 0) or 0)
-    dl_timeout = float(yt_cfg.get("download_test_timeout_seconds", 12))
-    if dl_url and dl_bytes > 0 and "youtube" in results:
-        dl_ok = await _youtube_download_test(
-            session, proxy_url, dl_url, dl_bytes, dl_timeout
-        )
-        results["youtube"]["download_ok"] = dl_ok
-        if not dl_ok:
-            results["youtube"]["ok"] = False
-
     proxy["_services"] = results
     summary = " ".join(
         f"{k[:3]}={'Y' if v.get('ok') else 'N'}" for k, v in results.items()
