@@ -45,13 +45,6 @@ jobs:
           path: out/*.yaml
           if-no-files-found: warn
 
-      - name: Update Gist - Global-subscription.yaml
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-subscription.yaml
-
       - name: Update Gist - Global-BlackFast-TG-YT.yaml
         if: hashFiles('out/Global-BlackFast-TG-YT.yaml') != ''
         uses: exuanbo/actions-deploy-gist@v1
@@ -68,6 +61,14 @@ jobs:
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-TG-YT-IG.yaml
 
+      - name: Update Gist - Global-BlackFast-TG-YT-IG-ChatGPT.yaml
+        if: hashFiles('out/Global-BlackFast-TG-YT-IG-ChatGPT.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/Global-BlackFast-TG-YT-IG-ChatGPT.yaml
+
       - name: Update Gist - Global-BlackFast-FlashScore.yaml
         if: hashFiles('out/Global-BlackFast-FlashScore.yaml') != ''
         uses: exuanbo/actions-deploy-gist@v1
@@ -75,14 +76,6 @@ jobs:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-FlashScore.yaml
-      
-      - name: Update Gist - Global-BlackFast-LS.yaml
-        if: hashFiles('out/Global-BlackFast-LS.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-LS.yaml
 
       - name: Update Gist - Global-BlackFast-TG-YT-LS.yaml
         if: hashFiles('out/Global-BlackFast-TG-YT-LS.yaml') != ''
@@ -100,10 +93,18 @@ jobs:
           gist_id: ${{ secrets.GIST_ID }}
           file_path: out/Global-BlackFast-TG-YT-IG-LS.yaml
 
+      - name: Update Gist - Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml
+        if: hashFiles('out/Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml') != ''
+        uses: exuanbo/actions-deploy-gist@v1
+        with:
+          token: ${{ secrets.GIST_TOKEN }}
+          gist_id: ${{ secrets.GIST_ID }}
+          file_path: out/Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml
+
       - name: Update Gist - Global-BlackFast-FlashScore-LS.yaml
         if: hashFiles('out/Global-BlackFast-FlashScore-LS.yaml') != ''
         uses: exuanbo/actions-deploy-gist@v1
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-FlashScore-LS.yaml    
+          file_path: out/Global-BlackFast-FlashScore-LS.yaml
