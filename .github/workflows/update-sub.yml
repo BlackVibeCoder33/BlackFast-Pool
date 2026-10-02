@@ -27,13 +27,28 @@ jobs:
       - name: Download sing-box
         run: |
           mkdir -p bin
-          SINGBOX_VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep '"tag_name":' | sed -E 's/.*"v([^"]+)".*/\1/')
-          curl -L -o singbox.tar.gz "https://github.com/SagerNet/sing-box/releases/download/v${SINGBOX_VERSION}/sing-box-${SINGBOX_VERSION}-linux-amd64.tar.gz"
+          ASSET_URL=$(curl -sL https://api.github.com/repos/SagerNet/sing-box/releases/latest \
+            | grep -oP '"browser_download_url":\s*"\K[^"]*linux-amd64\.tar\.gz(?=")' \
+            | head -1)
+          echo "Asset URL: ${ASSET_URL}"
+          if [ -z "${ASSET_URL}" ]; then
+            echo "ERROR: не удалось получить URL релиза sing-box"
+            exit 1
+          fi
+          curl -fL -o singbox.tar.gz "${ASSET_URL}"
+          file singbox.tar.gz
           tar -xzf singbox.tar.gz
-          mv sing-box-${SINGBOX_VERSION}-linux-amd64/sing-box bin/sing-box
+          SINGBOX_BIN=$(find . -type f -name "sing-box" | head -1)
+          echo "Found binary: ${SINGBOX_BIN}"
+          if [ -z "${SINGBOX_BIN}" ]; then
+            echo "ERROR: бинарник sing-box не найден после распаковки"
+            find . -type f | head -20
+            exit 1
+          fi
+          mv "${SINGBOX_BIN}" bin/sing-box
           chmod +x bin/sing-box
           ln -sf sing-box bin/sing-box.exe
-          rm -rf singbox.tar.gz sing-box-${SINGBOX_VERSION}-linux-amd64
+          rm -rf singbox.tar.gz sing-box-*-linux-amd64*
 
       - name: Run pipeline
         run: python run_once.py
