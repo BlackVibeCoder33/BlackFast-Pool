@@ -21,7 +21,6 @@ from core.fetcher import (
 from core.filter_rank import (
     build_profiles,
     ensure_unique_names,
-    filter_and_rank,
     sort_alphabetically,
 )
 from core.cache import (
@@ -38,8 +37,6 @@ from core.tcp_check import tcp_check_all
 
 class PoolState:
     def __init__(self) -> None:
-        self.default_yaml: str = ""
-        self.default_count: int = 0
         self.profiles_yaml: dict[str, str] = {}
         self.profiles_count: dict[str, int] = {}
         self.last_updated: float = 0.0
@@ -120,24 +117,13 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                 scfg=scfg,
             )
 
-            default_required_pre = config["thresholds"].get(
-                "required_services", []
-            )
-            profiles_cfg = config.get("subscription_profiles", [])
-
-            def _matches_any(p: dict[str, Any]) -> bool:
+            def _has_any_service(p: dict[str, Any]) -> bool:
                 svc = p.get("_services", {})
-                if all(svc.get(r, {}).get("ok") for r in default_required_pre):
-                    return True
-                for prof in profiles_cfg:
-                    reqs = prof.get("required_services", [])
-                    if reqs and all(svc.get(r, {}).get("ok") for r in reqs):
-                        return True
-                return False
+                return any(v.get("ok") for v in svc.values())
 
-            relevant = [p for p in checked if _matches_any(p)]
+            relevant = [p for p in checked if _has_any_service(p)]
             logger.info(
-                f"[2.5] Прошли хотя бы один набор сервисов: {len(relevant)} "
+                f"[2.5] Прошли хотя бы один сервис: {len(relevant)} "
                 f"из {len(checked)}"
             )
 
@@ -175,62 +161,6 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                 save_cache(cache_path, cache_data)
 
             min_speed = config["thresholds"]["min_speed_mbps"]
-            max_ping_val = config["thresholds"]["max_ping_ms"]
-
-            default_required = config["thresholds"].get("required_services", [])
-            default_passed = filter_and_rank(
-                speed_results, default_required, min_speed
-            )
-            default_expanded = expand_representatives(
-                default_passed, expansion_map
-            )
-            default_final = sort_alphabetically(
-                ensure_unique_names(list(default_expanded) + passthrough)
-            )
-            if default_final:
-                yaml_content = build_subscription(
-                    default_final, group_prefix="BlackFast"
-                )
-                state.default_yaml = yaml_content
-                state.default_count = len(default_final)
-                out_path = base_dir() / config["paths"]["out_subscription"]
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                out_path.write_text(yaml_content, encoding="utf-8")
-                golden_path = base_dir() / "out" / "golden.yaml"
-                golden_path.write_text(yaml_content, encoding="utf-8")
-                sources: dict[str, int] = {}
-                for p in default_final:
-                    s = p.get("_source") or "unknown"
-                    sources[s] = sources.get(s, 0) + 1
-                source_str = ", ".join(f"{k}={v}" for k, v in sources.items())
-                logger.info(
-                    f"[3] Основная подписка: {len(default_final)} записей "
-                    f"({len(default_passed)} уникальных серверов) "
-                    f"[{source_str}] (золотой пул обновлён)"
-                )
-            else:
-                golden_path = base_dir() / "out" / "golden.yaml"
-                if golden_path.exists():
-                    golden_text = golden_path.read_text(encoding="utf-8")
-                    if golden_text.strip():
-                        state.default_yaml = golden_text
-                        try:
-                            parsed = yaml.safe_load(golden_text)
-                            count = len(parsed.get("proxies", []))
-                        except Exception:
-                            count = 0
-                        state.default_count = count
-                        age_min = int(
-                            (time.time() - golden_path.stat().st_mtime) / 60
-                        )
-                        logger.warning(
-                            f"[3] Пул пуст — отдаю золотой ({count} серверов, "
-                            f"{age_min} мин назад)"
-                        )
-                    else:
-                        logger.warning("[3] Пул пуст, золотой тоже пуст")
-                else:
-                    logger.warning("[3] Пул пуст, золотого ещё нет")
 
             profiles = config.get("subscription_profiles", [])
             if profiles:
@@ -271,7 +201,6 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             elapsed = time.time() - t_start
             logger.info(
                 f"[4] Pipeline завершён за {elapsed:.0f} с. "
-                f"Пул: {state.default_count} основных, "
                 f"{len(state.profiles_yaml)} профилей"
             )
 
@@ -279,10 +208,6 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             port = int(config["http_server"]["port"])
             logger.info("=" * 60)
             logger.info("ГОТОВЫЕ ССЫЛКИ ДЛЯ KARING:")
-            logger.info(
-                f"  Основная BlackFast ({state.default_count} серверов):"
-            )
-            logger.info(f"    http://{local_ip}:{port}/sub")
             for profile in config.get("subscription_profiles", []):
                 path = profile["path"]
                 if path in state.profiles_yaml:
@@ -296,18 +221,6 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             logger.info("=" * 60)
         except Exception as e:
             logger.exception(f"Ошибка pipeline: {e}")
-
-
-async def handle_sub(request: web.Request) -> web.Response:
-    if not state.default_yaml:
-        return web.Response(
-            status=503, text="BlackFast pool is not ready yet. Try again later."
-        )
-    return web.Response(
-        text=state.default_yaml,
-        content_type="text/plain",
-        headers={"Content-Disposition": 'attachment; filename="BlackFast.yaml"'},
-    )
 
 
 async def handle_sub_profile(request: web.Request) -> web.Response:
@@ -333,15 +246,12 @@ async def handle_status(request: web.Request) -> web.Response:
         "BlackFast Pool",
         f"Last updated: {ago} sec ago",
         "",
-        f"Default subscription (/sub): {state.default_count} servers",
+        "Profiles:",
     ]
-    if state.profiles_yaml:
-        lines.append("")
-        lines.append("Profiles:")
-        for path in sorted(state.profiles_yaml.keys()):
-            lines.append(
-                f"  /sub/{path}  →  {state.profiles_count.get(path, 0)} servers"
-            )
+    for path in sorted(state.profiles_yaml.keys()):
+        lines.append(
+            f"  /sub/{path}  →  {state.profiles_count.get(path, 0)} servers"
+        )
     return web.Response(text="\n".join(lines))
 
 
@@ -377,23 +287,6 @@ async def main() -> None:
 
     asyncio.create_task(run_pipeline(config))
 
-    golden_path = base_dir() / "out" / "golden.yaml"
-    if golden_path.exists():
-        try:
-            golden_text = golden_path.read_text(encoding="utf-8")
-            if golden_text.strip():
-                state.default_yaml = golden_text
-                parsed = yaml.safe_load(golden_text)
-                state.default_count = len(parsed.get("proxies", []))
-                state.last_updated = golden_path.stat().st_mtime
-                age_min = int((time.time() - state.last_updated) / 60)
-                logger.info(
-                    f"Загружен золотой пул: {state.default_count} серверов, "
-                    f"{age_min} мин назад"
-                )
-        except Exception as e:
-            logger.warning(f"Не удалось загрузить золотой пул: {e}")
-
     interval = int(config["schedule"]["update_interval_minutes"])
     scheduler = AsyncIOScheduler()
     scheduler.add_job(run_pipeline, "interval", minutes=interval, args=[config])
@@ -401,7 +294,6 @@ async def main() -> None:
     logger.info(f"Планировщик запущен: обновление каждые {interval} мин")
 
     app = web.Application()
-    app.router.add_get("/sub", handle_sub)
     app.router.add_get("/sub/{profile}", handle_sub_profile)
     app.router.add_get("/", handle_status)
     app.router.add_get("/status", handle_status)
@@ -417,7 +309,6 @@ async def main() -> None:
     local_ip = _get_local_ip()
     logger.info("=" * 60)
     logger.info(f"HTTP-сервер слушает {host}:{port}")
-    logger.info(f"Основная подписка: http://{local_ip}:{port}/sub")
     for profile in config.get("subscription_profiles", []):
         logger.info(
             f"  '{profile['name']}': http://{local_ip}:{port}/sub/{profile['path']}"

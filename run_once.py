@@ -20,7 +20,6 @@ from core.fetcher import (
 from core.filter_rank import (
     build_profiles,
     ensure_unique_names,
-    filter_and_rank,
     sort_alphabetically,
 )
 from core.cache import (
@@ -95,22 +94,13 @@ async def run(config: dict[str, Any]) -> None:
         scfg=scfg,
     )
 
-    default_required_pre = config["thresholds"].get("required_services", [])
-    profiles_cfg = config.get("subscription_profiles", [])
-
-    def _matches_any(p: dict[str, Any]) -> bool:
+    def _has_any_service(p: dict[str, Any]) -> bool:
         svc = p.get("_services", {})
-        if all(svc.get(r, {}).get("ok") for r in default_required_pre):
-            return True
-        for prof in profiles_cfg:
-            reqs = prof.get("required_services", [])
-            if reqs and all(svc.get(r, {}).get("ok") for r in reqs):
-                return True
-        return False
+        return any(v.get("ok") for v in svc.values())
 
-    relevant = [p for p in checked if _matches_any(p)]
+    relevant = [p for p in checked if _has_any_service(p)]
     logger.info(
-        f"[2.5] Прошли хотя бы один набор сервисов: {len(relevant)} "
+        f"[2.5] Прошли хотя бы один сервис: {len(relevant)} "
         f"из {len(checked)}"
     )
 
@@ -148,28 +138,11 @@ async def run(config: dict[str, Any]) -> None:
         save_cache(cache_path, cache_data)
 
     min_speed = config["thresholds"]["min_speed_mbps"]
-    default_required = config["thresholds"].get("required_services", [])
-    default_passed = filter_and_rank(speed_results, default_required, min_speed)
-    default_expanded = expand_representatives(default_passed, expansion_map)
-    default_final = sort_alphabetically(
-        ensure_unique_names(list(default_expanded) + passthrough)
-    )
-
-    if not default_final:
-        logger.warning("Финал пуст — выходим без сохранения")
-        return
-
-    yaml_content = build_subscription(default_final, group_prefix="BlackFast")
 
     from pathlib import Path
 
     out_dir = Path("out")
     out_dir.mkdir(exist_ok=True)
-    (out_dir / "Global-subscription.yaml").write_text(yaml_content, encoding="utf-8")
-    logger.info(
-        f"[3] Основная подписка: {len(default_final)} записей "
-        f"({len(default_passed)} уникальных серверов)"
-    )
 
     profiles = config.get("subscription_profiles", [])
     if profiles:

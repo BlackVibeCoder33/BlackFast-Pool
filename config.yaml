@@ -31,11 +31,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
-  required_services:
-    - youtube
-    - telegram
-    - instagram
+  min_speed_mbps: 3
 
 anti_dpi:
   enabled: true
@@ -59,21 +55,21 @@ subscription_profiles:
       - telegram
       - youtube
       - instagram
+  - name: "BlackFast TG+YT+IG+ChatGPT"
+    path: "tg-yt-ig-chatgpt"
+    filename: "Global-BlackFast-TG-YT-IG-ChatGPT.yaml"
+    group_prefix: "BlackFast TG+YT+IG+ChatGPT"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+      - chatgpt
   - name: "BlackFast FlashScore"
     path: "flashscore"
     filename: "Global-BlackFast-FlashScore.yaml"
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
-  - name: "BlackFast LS"
-    path: "ls"
-    filename: "Global-BlackFast-LS.yaml"
-    group_prefix: "BlackFast LS"
-    required_services:
-      - telegram
-      - youtube
-      - instagram
-    min_speed_mbps: 0.5
   - name: "BlackFast TG+YT LS"
     path: "tg-yt-ls"
     filename: "Global-BlackFast-TG-YT-LS.yaml"
@@ -91,6 +87,16 @@ subscription_profiles:
       - youtube
       - instagram
     min_speed_mbps: 0.5
+  - name: "BlackFast TG+YT+IG+ChatGPT LS"
+    path: "tg-yt-ig-chatgpt-ls"
+    filename: "Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml"
+    group_prefix: "BlackFast TG+YT+IG+ChatGPT LS"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+      - chatgpt
+    min_speed_mbps: 0.5
   - name: "BlackFast FlashScore LS"
     path: "flashscore-ls"
     filename: "Global-BlackFast-FlashScore-LS.yaml"
@@ -104,15 +110,22 @@ passthrough_types:
 
 services:
   youtube:
-    url: "https://i.ytimg.com/generate_204"
+    url: "https://www.youtube.com/generate_204"
     expect_status: 204
     timeout_seconds: 7
+    download_test_url: "https://www.youtube.com/favicon.ico"
+    download_test_bytes: 200000
+    download_test_timeout_seconds: 12
   instagram:
     url: "https://www.instagram.com/robots.txt"
     expect_status: 200
     timeout_seconds: 7
   telegram:
     url: "https://web.telegram.org/"
+    expect_status: 200
+    timeout_seconds: 7
+  chatgpt:
+    url: "https://chatgpt.com/cdn-cgi/trace"
     expect_status: 200
     timeout_seconds: 7
   flashscore:
