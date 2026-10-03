@@ -32,6 +32,7 @@ def build_profiles(
         path = profile["path"]
         required = profile["required_services"]
         profile_min_speed = float(profile.get("min_speed_mbps", min_speed_mbps))
+        allow_russian = bool(profile.get("allow_russian", False))
         exclude_patterns = [
             str(x).lower()
             for x in profile.get("exclude_name_contains", [])
@@ -40,7 +41,11 @@ def build_profiles(
 
         selected: list[dict[str, Any]] = []
         excluded_by_pattern = 0
+        excluded_russian = 0
         for p in proxies:
+            if p.get("_is_russian") and not allow_russian:
+                excluded_russian += 1
+                continue
             svc = p.get("_services", {})
             if not all(svc.get(req, {}).get("ok") for req in required):
                 continue
@@ -60,13 +65,15 @@ def build_profiles(
             s = p.get("_source") or "unknown"
             sources[s] = sources.get(s, 0) + 1
         source_str = ", ".join(f"{k}={v}" for k, v in sources.items())
-        excluded_str = (
-            f", исключено по фильтру: {excluded_by_pattern}"
-            if excluded_by_pattern
-            else ""
-        )
+        excluded_str = ""
+        if excluded_by_pattern:
+            excluded_str += f", исключено по фильтру: {excluded_by_pattern}"
+        if excluded_russian:
+            excluded_str += f", исключено РФ: {excluded_russian}"
         logger.info(
-            f"Профиль '{path}' ({'+'.join(required)}) min_speed={profile_min_speed:g}: "
+            f"Профиль '{path}' ({'+'.join(required)}) "
+            f"min_speed={profile_min_speed:g}"
+            f"{' +РФ' if allow_russian else ''}: "
             f"{len(selected)} серверов [{source_str}]{excluded_str}"
         )
     return result
