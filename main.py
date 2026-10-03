@@ -61,30 +61,38 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
             passthrough_types = set(config.get("passthrough_types", []))
-            passthrough = [
-                p for p in proxies_all if p.get("type") in passthrough_types
-            ]
-            russian = [
+            passthrough_regular = [
                 p for p in proxies_all
-                if p.get("_is_russian")
-                and p.get("type") not in passthrough_types
+                if p.get("type") in passthrough_types
+                and not p.get("_is_russian")
             ]
-            testable = [
+            passthrough_russian = [
+                p for p in proxies_all
+                if p.get("type") in passthrough_types
+                and p.get("_is_russian")
+            ]
+            testable_regular = [
                 p for p in proxies_all
                 if p.get("type") not in passthrough_types
                 and not p.get("_is_russian")
             ]
+            testable_russian = [
+                p for p in proxies_all
+                if p.get("type") not in passthrough_types
+                and p.get("_is_russian")
+            ]
             if passthrough_types:
                 logger.info(
-                    f"[1.5] Passthrough "
-                    f"({','.join(sorted(passthrough_types))}): "
-                    f"{len(passthrough)}, тестируемых: {len(testable)}, "
-                    f"РФ: {len(russian)}"
+                    f"[1.5] Passthrough: обычных "
+                    f"{len(passthrough_regular)}, "
+                    f"РФ {len(passthrough_russian)}. "
+                    f"Тестируемых: обычных "
+                    f"{len(testable_regular)}, "
+                    f"РФ {len(testable_russian)}"
                 )
 
-            russian_reps, _ = group_by_server_port(russian)
-
-            representatives, expansion_map = group_by_server_port(testable)
+            testable_all = testable_regular + testable_russian
+            representatives, expansion_map = group_by_server_port(testable_all)
             logger.info(
                 f"[1.5] Уникальных (server, port): {len(representatives)}"
             )
@@ -187,9 +195,9 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     include_russian = bool(
                         profile.get("allow_russian", False)
                     )
-                    base_list = list(expanded) + passthrough
+                    base_list = list(expanded) + passthrough_regular
                     if include_russian:
-                        base_list += russian_reps
+                        base_list += passthrough_russian
                     final_list = sort_alphabetically(
                         ensure_unique_names(base_list)
                     )
@@ -214,10 +222,14 @@ async def run_pipeline(config: dict[str, Any]) -> None:
 
             state.last_updated = time.time()
             elapsed = time.time() - t_start
+            russian_passed = [
+                p for p in speed_results if p.get("_is_russian")
+            ]
             logger.info(
                 f"[4] Pipeline завершён за {elapsed:.0f} с. "
-                f"{len(state.profiles_yaml)} профилей, "
-                f"РФ-серверов в flashscore: {len(russian_reps)}"
+                f"{len(state.profiles_yaml)} профилей. "
+                f"РФ прошли speed-test: {len(russian_passed)}, "
+                f"РФ hy2 (passthrough): {len(passthrough_russian)}"
             )
 
             local_ip = _get_local_ip()
