@@ -66,8 +66,8 @@ async def run(config: dict[str, Any]) -> None:
     if passthrough_types:
         logger.info(
             f"[1.5] Passthrough: обычных "
-            f"{len(passthrough_regular)}, "
-            f"РФ {len(passthrough_russian)}. "
+            f"{len(passthrough_regular)} (в все профили), "
+            f"РФ {len(passthrough_russian)} (исключены). "
             f"Тестируемых: обычных "
             f"{len(testable_regular)}, "
             f"РФ {len(testable_russian)}"
@@ -171,10 +171,7 @@ async def run(config: dict[str, Any]) -> None:
             prefix = profile.get("group_prefix", profile["name"])
             selected = selections.get(path, [])
             expanded = expand_representatives(selected, expansion_map)
-            include_russian = bool(profile.get("allow_russian", False))
             base_list = list(expanded) + passthrough_regular
-            if include_russian:
-                base_list += passthrough_russian
             final_list = sort_alphabetically(
                 ensure_unique_names(base_list)
             )
@@ -196,7 +193,7 @@ async def run(config: dict[str, Any]) -> None:
     logger.info(
         f"[4] Pipeline завершён за {elapsed:.0f} с. "
         f"РФ прошли speed-test: {len(russian_passed)}, "
-        f"РФ hy2 (passthrough): {len(passthrough_russian)}"
+        f"РФ hy2 исключены: {len(passthrough_russian)}"
     )
 
 
