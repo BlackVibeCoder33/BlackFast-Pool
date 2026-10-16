@@ -57,7 +57,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: blackfast-subscription
-          path: out/*.yaml
+          path: |
+            out/Global-*.yaml
+            out/Hiddify-*.yaml
           if-no-files-found: warn
 
       - name: Update Gist (all profiles)
