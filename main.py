@@ -61,21 +61,49 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
             udp_types = set(config.get("udp_types", ["hysteria2"]))
-            representatives, expansion_map = group_by_server_port(proxies_all)
+
+            # --- Разделяем прокси на два независимых потока ---
+            # TCP-протоколы (VLESS/VMess/SS/Trojan) проходят полный TCP-чек + service + speed.
+            # hy2 (QUIC) TCP-чек пропускают, но честно проходят service-check и speed-test.
+            # Это исключает «заражение» результатов: hy2 и TCP больше не смешиваются
+            # в одной группе (server, port).
+            tcp_proxies = [
+                p for p in proxies_all if p.get("type") not in udp_types
+            ]
+            hy2_proxies = [
+                p for p in proxies_all if p.get("type") in udp_types
+            ]
             logger.info(
-                f"[1.5] Уникальных (server, port): {len(representatives)}"
+                f"[1.5] Разделение: TCP-протоколов {len(tcp_proxies)}, "
+                f"UDP/hy2 {len(hy2_proxies)}"
             )
 
+            # --- TCP pipeline (как было до внедрения hy2) ---
+            tcp_reps, tcp_map = group_by_server_port(tcp_proxies)
+            logger.info(f"[1.5] TCP уникальных (server, port): {len(tcp_reps)}")
+
             tcp_cfg = config.get("tcp_check", {})
-            alive, _ = await tcp_check_all(
-                representatives,
+            tcp_alive, _ = await tcp_check_all(
+                tcp_reps,
                 concurrent=tcp_cfg.get("concurrent", 200),
                 timeout=float(tcp_cfg.get("timeout_seconds", 3)),
-                skip_types=udp_types,
             )
             max_ping = config["thresholds"]["max_ping_ms"]
-            alive = [p for p in alive if p.get("_tcp_ping_ms", 1e9) <= max_ping]
-            logger.info(f"[2] Живых и ≤ {max_ping} мс: {len(alive)}")
+            tcp_alive = [
+                p for p in tcp_alive if p.get("_tcp_ping_ms", 1e9) <= max_ping
+            ]
+            logger.info(f"[2] TCP живых и ≤ {max_ping} мс: {len(tcp_alive)}")
+
+            # --- hy2 pipeline: TCP-чек пропускаем, помечаем «живыми» ---
+            for p in hy2_proxies:
+                p["_tcp_ok"] = True
+                p["_tcp_ping_ms"] = 0.0
+                p["_tcp_skip"] = True
+            logger.info(f"[2] hy2 к service-check: {len(hy2_proxies)}")
+
+            # Объединяем для дальнейших этапов (service-check + speed-test)
+            alive = tcp_alive + hy2_proxies
+            logger.info(f"[2.5] Всего к service-check: {len(alive)}")
 
             st = config.get("speed_test", {})
             scfg = config.get("service_check", {})
@@ -167,14 +195,26 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     name = profile["name"]
                     prefix = profile.get("group_prefix", name)
                     selected = profile_selections.get(path, [])
-                    expanded = expand_representatives(selected, expansion_map)
-                    base_list = list(expanded)
+                    # TCP-выборку разворачиваем через tcp_map,
+                    # hy2 добавляем как есть (каждый hy2 — самостоятельный representative).
+                    selected_tcp = [
+                        p for p in selected if not p.get("_tcp_skip")
+                    ]
+                    selected_hy2 = [
+                        p for p in selected if p.get("_tcp_skip")
+                    ]
+                    expanded_tcp = expand_representatives(
+                        selected_tcp, tcp_map
+                    )
+                    base_list = list(expanded_tcp) + list(selected_hy2)
                     final_list = sort_alphabetically(
                         ensure_unique_names(base_list)
                     )
                     if not final_list:
                         logger.warning(f"[profiles] '{path}' пуст — пропуск")
                         continue
+                    # filename определяем ДО использования (был баг: использовался ниже).
+                    filename = profile.get("filename", f"{path}.yaml")
                     yaml_content = build_subscription(
                         final_list, group_prefix=prefix
                     )
@@ -193,7 +233,6 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                             f"→ {hiddify_filename}"
                         )
                     new_profiles_count[path] = len(final_list)
-                    filename = profile.get("filename", f"{path}.yaml")
                     out_path = base_dir() / "out" / filename
                     out_path.parent.mkdir(parents=True, exist_ok=True)
                     out_path.write_text(yaml_content, encoding="utf-8")
