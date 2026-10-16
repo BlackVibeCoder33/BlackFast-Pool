@@ -16,9 +16,11 @@ def main() -> int:
         return 1
 
     out_dir = Path("out")
-    files = sorted(out_dir.glob("Global-*.yaml"))
+    files = sorted(out_dir.glob("Global-*.yaml")) + sorted(
+        out_dir.glob("Hiddify-*.yaml")
+    )
     if not files:
-        print("Нет файлов out/Global-*.yaml — нечего загружать")
+        print("Нет файлов out/Global-*.yaml или out/Hiddify-*.yaml")
         return 0
 
     payload_files = {}
