@@ -60,39 +60,8 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             proxies_all = await fetch_all(config["subscriptions"])
             logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
-            passthrough_types = set(config.get("passthrough_types", []))
-            passthrough_regular = [
-                p for p in proxies_all
-                if p.get("type") in passthrough_types
-                and not p.get("_is_russian")
-            ]
-            passthrough_russian = [
-                p for p in proxies_all
-                if p.get("type") in passthrough_types
-                and p.get("_is_russian")
-            ]
-            testable_regular = [
-                p for p in proxies_all
-                if p.get("type") not in passthrough_types
-                and not p.get("_is_russian")
-            ]
-            testable_russian = [
-                p for p in proxies_all
-                if p.get("type") not in passthrough_types
-                and p.get("_is_russian")
-            ]
-            if passthrough_types:
-                logger.info(
-                    f"[1.5] Passthrough: обычных "
-                    f"{len(passthrough_regular)} (в все профили), "
-                    f"РФ {len(passthrough_russian)} (исключены). "
-                    f"Тестируемых: обычных "
-                    f"{len(testable_regular)}, "
-                    f"РФ {len(testable_russian)}"
-                )
-
-            testable_all = testable_regular + testable_russian
-            representatives, expansion_map = group_by_server_port(testable_all)
+            udp_types = set(config.get("udp_types", ["hysteria2"]))
+            representatives, expansion_map = group_by_server_port(proxies_all)
             logger.info(
                 f"[1.5] Уникальных (server, port): {len(representatives)}"
             )
@@ -102,6 +71,7 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                 representatives,
                 concurrent=tcp_cfg.get("concurrent", 200),
                 timeout=float(tcp_cfg.get("timeout_seconds", 3)),
+                skip_types=udp_types,
             )
             max_ping = config["thresholds"]["max_ping_ms"]
             alive = [p for p in alive if p.get("_tcp_ping_ms", 1e9) <= max_ping]
@@ -192,7 +162,7 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                     prefix = profile.get("group_prefix", name)
                     selected = profile_selections.get(path, [])
                     expanded = expand_representatives(selected, expansion_map)
-                    base_list = list(expanded) + passthrough_regular
+                    base_list = list(expanded)
                     final_list = sort_alphabetically(
                         ensure_unique_names(base_list)
                     )
@@ -223,8 +193,7 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             logger.info(
                 f"[4] Pipeline завершён за {elapsed:.0f} с. "
                 f"{len(state.profiles_yaml)} профилей. "
-                f"РФ прошли speed-test: {len(russian_passed)}, "
-                f"РФ hy2 исключены: {len(passthrough_russian)}"
+                f"РФ прошли speed-test: {len(russian_passed)}"
             )
 
             local_ip = _get_local_ip()

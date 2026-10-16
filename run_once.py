@@ -28,7 +28,6 @@ from core.cache import (
     save_cache,
     update_after_run,
 )
-from core.hy2_speedtest import test_hy2_speed
 from core.service_check import get_service_concurrent, service_check_all
 from core.speed_test import get_speed_concurrent, speed_test_all
 from core.tcp_check import tcp_check_all
@@ -43,52 +42,8 @@ async def run(config: dict[str, Any]) -> None:
     proxies_all = await fetch_all(config["subscriptions"])
     logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
-    passthrough_types = set(config.get("passthrough_types", []))
-    hy2_all = [
-        p for p in proxies_all if p.get("type") in passthrough_types
-    ]
-    passthrough_regular = [
-        p for p in hy2_all if not p.get("_is_russian")
-    ]
-    passthrough_russian = [
-        p for p in hy2_all if p.get("_is_russian")
-    ]
-    testable_regular = [
-        p for p in proxies_all
-        if p.get("type") not in passthrough_types
-        and not p.get("_is_russian")
-    ]
-    testable_russian = [
-        p for p in proxies_all
-        if p.get("type") not in passthrough_types
-        and p.get("_is_russian")
-    ]
-
-    # --- Тестируем скорость всех hy2 (и обычных, и русских) ---
-    min_speed = config["thresholds"]["min_speed_mbps"]
-    hy2_passed = await test_hy2_speed(hy2_all, min_download_mbps=min_speed)
-    passed_keys = {(p.get("server"), p.get("port")) for p in hy2_passed}
-    passthrough_regular = [
-        p for p in passthrough_regular
-        if (p.get("server"), p.get("port")) in passed_keys
-    ]
-    passthrough_russian = [
-        p for p in passthrough_russian
-        if (p.get("server"), p.get("port")) in passed_keys
-    ]
-
-    if passthrough_types:
-        logger.info(
-            f"[1.5] Hy2 passthrough: обычных "
-            f"{len(passthrough_regular)} (в все профили), "
-            f"РФ {len(passthrough_russian)} (исключены). "
-            f"Тестируемых: обычных "
-            f"{len(testable_regular)}, "
-            f"РФ {len(testable_russian)}"
-        )
-
-    testable_all = testable_regular + testable_russian
-    representatives, expansion_map = group_by_server_port(testable_all)
+    udp_types = set(config.get("udp_types", ["hysteria2"]))
+    representatives, expansion_map = group_by_server_port(proxies_all)
     logger.info(f"[1.5] Уникальных (server, port): {len(representatives)}")
 
     tcp_cfg = config.get("tcp_check", {})
@@ -96,6 +51,7 @@ async def run(config: dict[str, Any]) -> None:
         representatives,
         concurrent=tcp_cfg.get("concurrent", 200),
         timeout=float(tcp_cfg.get("timeout_seconds", 3)),
+        skip_types=udp_types,
     )
     max_ping = config["thresholds"]["max_ping_ms"]
     alive = [p for p in alive if p.get("_tcp_ping_ms", 1e9) <= max_ping]
@@ -185,7 +141,7 @@ async def run(config: dict[str, Any]) -> None:
             prefix = profile.get("group_prefix", profile["name"])
             selected = selections.get(path, [])
             expanded = expand_representatives(selected, expansion_map)
-            base_list = list(expanded) + passthrough_regular
+            base_list = list(expanded)
             final_list = sort_alphabetically(
                 ensure_unique_names(base_list)
             )
@@ -206,8 +162,7 @@ async def run(config: dict[str, Any]) -> None:
     ]
     logger.info(
         f"[4] Pipeline завершён за {elapsed:.0f} с. "
-        f"РФ прошли speed-test: {len(russian_passed)}, "
-        f"РФ hy2 (прошли скорость): {len(passthrough_russian)}"
+        f"РФ прошли speed-test: {len(russian_passed)}"
     )
 
 

@@ -107,7 +107,9 @@ subscription_profiles:
     min_speed_mbps: 0.5
     allow_russian: true
 
-passthrough_types:
+# Типы, которые не проверяются TCP-чеком (UDP/QUIC-протоколы).
+# Они всё равно проходят service-check и speed-test через sing-box.
+udp_types:
   - hysteria2
 
 services:
