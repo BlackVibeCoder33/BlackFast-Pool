@@ -15,7 +15,7 @@ from core.paths import base_dir
 
 SINGBOX_BIN = base_dir() / "bin" / "sing-box.exe"
 HTTP_PROXY_BASE = 10800
-PORT_POOL_SIZE = 16
+PORT_POOL_SIZE = 32
 _ANTI_DPI_CONFIG: dict[str, Any] = {}
 
 
@@ -199,10 +199,18 @@ def write_config(config: dict[str, Any], path: Path) -> Path:
     return path
 
 
-async def _wait_for_port(host: str, port: int, timeout: float = 10.0) -> bool:
+async def _wait_for_port(
+    host: str,
+    port: int,
+    proc: asyncio.subprocess.Process | None = None,
+    timeout: float = 10.0,
+) -> bool:
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
     while loop.time() < deadline:
+        # Если процесс уже умер — нет смысла ждать порт.
+        if proc is not None and proc.returncode is not None:
+            return False
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(host, port), timeout=0.5
@@ -237,14 +245,19 @@ async def _start_singbox_process(
         stderr=asyncio.subprocess.DEVNULL,
     )
 
-    ok = await _wait_for_port("127.0.0.1", http_port, timeout=STARTUP_TIMEOUT_SEC)
-    if not ok:
+    ok = await _wait_for_port(
+        "127.0.0.1", http_port, proc=proc, timeout=STARTUP_TIMEOUT_SEC
+    )
+    if not ok or proc.returncode is not None:
         try:
             proc.kill()
             await proc.wait()
         except Exception:
             pass
-        logger.debug(f"sing-box не поднялся на порту {http_port}")
+        logger.debug(
+            f"sing-box не поднялся на порту {http_port} "
+            f"(returncode={proc.returncode})"
+        )
         return None
     return proc
 
@@ -320,17 +333,19 @@ async def run_batch_test(
     processed = {"count": 0}
 
     async def worker(worker_id: int) -> None:
-        iteration = 0
+        # Каждому воркеру — ФИКСИРОВАННЫЙ порт на всё время работы.
+        # Раньше порт менялся по формуле (worker_id + iteration * num_workers)
+        # % port_pool, из-за чего два воркера могли одновременно занять
+        # один порт. Тогда sing-box №2 падал (порт занят), но _wait_for_port
+        # отвечал от sing-box №1 → тестировался ЧУЖОЙ прокси. Из-за этого
+        # в подписку попадали «мертвые» сервера, которые на самом деле
+        # не проходили проверок.
+        port = HTTP_PROXY_BASE + (worker_id % port_pool)
         while True:
             try:
                 p = queue.get_nowait()
             except asyncio.QueueEmpty:
                 return
-
-            port = HTTP_PROXY_BASE + (
-                (worker_id + iteration * num_workers) % port_pool
-            )
-            iteration += 1
 
             try:
                 r = await _test_one_worker(p, port, worker_id, tester_fn)
