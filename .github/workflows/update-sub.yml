@@ -24,16 +24,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Install Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-
-      - name: Install clash-speedtest
-        run: |
-          go install github.com/faceair/clash-speedtest@latest
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
-
       - name: Download sing-box
         run: |
           mkdir -p bin
@@ -70,66 +60,8 @@ jobs:
           path: out/*.yaml
           if-no-files-found: warn
 
-      - name: Update Gist - Global-BlackFast-TG-YT.yaml
-        if: hashFiles('out/Global-BlackFast-TG-YT.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-TG-YT.yaml
-
-      - name: Update Gist - Global-BlackFast-TG-YT-IG.yaml
-        if: hashFiles('out/Global-BlackFast-TG-YT-IG.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-TG-YT-IG.yaml
-
-      - name: Update Gist - Global-BlackFast-TG-YT-IG-ChatGPT.yaml
-        if: hashFiles('out/Global-BlackFast-TG-YT-IG-ChatGPT.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-TG-YT-IG-ChatGPT.yaml
-
-      - name: Update Gist - Global-BlackFast-FlashScore.yaml
-        if: hashFiles('out/Global-BlackFast-FlashScore.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-FlashScore.yaml
-
-      - name: Update Gist - Global-BlackFast-TG-YT-LS.yaml
-        if: hashFiles('out/Global-BlackFast-TG-YT-LS.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-TG-YT-LS.yaml
-
-      - name: Update Gist - Global-BlackFast-TG-YT-IG-LS.yaml
-        if: hashFiles('out/Global-BlackFast-TG-YT-IG-LS.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-TG-YT-IG-LS.yaml
-
-      - name: Update Gist - Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml
-        if: hashFiles('out/Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml
-
-      - name: Update Gist - Global-BlackFast-FlashScore-LS.yaml
-        if: hashFiles('out/Global-BlackFast-FlashScore-LS.yaml') != ''
-        uses: exuanbo/actions-deploy-gist@v1
-        with:
-          token: ${{ secrets.GIST_TOKEN }}
-          gist_id: ${{ secrets.GIST_ID }}
-          file_path: out/Global-BlackFast-FlashScore-LS.yaml
+      - name: Update Gist (all profiles)
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          GIST_ID: ${{ secrets.GIST_ID }}
+        run: python scripts/update_gist.py
