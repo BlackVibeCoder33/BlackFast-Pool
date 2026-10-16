@@ -49,18 +49,36 @@ async def tcp_check_all(
     proxies: list[dict[str, Any]],
     concurrent: int = 200,
     timeout: float = 4.0,
+    skip_types: set[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     if not proxies:
         return [], []
 
+    skip_types = skip_types or set()
+
+    to_check: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for p in proxies:
+        if p.get("type") in skip_types:
+            # UDP/QUIC-протоколы: TCP-чек бессмыслен, помечаем «живыми»
+            p["_tcp_ok"] = True
+            p["_tcp_ping_ms"] = 0.0
+            p["_tcp_skip"] = True
+            skipped.append(p)
+        else:
+            to_check.append(p)
+
     semaphore = asyncio.Semaphore(concurrent)
-    tasks = [_check_one(p, timeout, semaphore) for p in proxies]
-    results = await asyncio.gather(*tasks)
+    tasks = [_check_one(p, timeout, semaphore) for p in to_check]
+    checked = await asyncio.gather(*tasks)
+
+    results = list(checked) + skipped
 
     alive = [p for p in results if p.get("_tcp_ok")]
     dead = [p for p in results if not p.get("_tcp_ok")]
 
     logger.info(
-        f"TCP-чек: проверено {len(results)}, живых {len(alive)}, отсеяно {len(dead)}"
+        f"TCP-чек: проверено {len(checked)}, пропущено (UDP) {len(skipped)}, "
+        f"живых {len(alive)}, отсеяно {len(dead)}"
     )
     return alive, dead
