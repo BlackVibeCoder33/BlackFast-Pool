@@ -28,6 +28,7 @@ from core.cache import (
     save_cache,
     update_after_run,
 )
+from core.hy2_speedtest import test_hy2_speed
 from core.service_check import get_service_concurrent, service_check_all
 from core.speed_test import get_speed_concurrent, speed_test_all
 from core.tcp_check import tcp_check_all
@@ -43,15 +44,14 @@ async def run(config: dict[str, Any]) -> None:
     logger.info(f"[1] После парсинга: {len(proxies_all)}")
 
     passthrough_types = set(config.get("passthrough_types", []))
+    hy2_all = [
+        p for p in proxies_all if p.get("type") in passthrough_types
+    ]
     passthrough_regular = [
-        p for p in proxies_all
-        if p.get("type") in passthrough_types
-        and not p.get("_is_russian")
+        p for p in hy2_all if not p.get("_is_russian")
     ]
     passthrough_russian = [
-        p for p in proxies_all
-        if p.get("type") in passthrough_types
-        and p.get("_is_russian")
+        p for p in hy2_all if p.get("_is_russian")
     ]
     testable_regular = [
         p for p in proxies_all
@@ -63,9 +63,23 @@ async def run(config: dict[str, Any]) -> None:
         if p.get("type") not in passthrough_types
         and p.get("_is_russian")
     ]
+
+    # --- Тестируем скорость всех hy2 (и обычных, и русских) ---
+    min_speed = config["thresholds"]["min_speed_mbps"]
+    hy2_passed = await test_hy2_speed(hy2_all, min_download_mbps=min_speed)
+    passed_keys = {(p.get("server"), p.get("port")) for p in hy2_passed}
+    passthrough_regular = [
+        p for p in passthrough_regular
+        if (p.get("server"), p.get("port")) in passed_keys
+    ]
+    passthrough_russian = [
+        p for p in passthrough_russian
+        if (p.get("server"), p.get("port")) in passed_keys
+    ]
+
     if passthrough_types:
         logger.info(
-            f"[1.5] Passthrough: обычных "
+            f"[1.5] Hy2 passthrough: обычных "
             f"{len(passthrough_regular)} (в все профили), "
             f"РФ {len(passthrough_russian)} (исключены). "
             f"Тестируемых: обычных "
@@ -193,7 +207,7 @@ async def run(config: dict[str, Any]) -> None:
     logger.info(
         f"[4] Pipeline завершён за {elapsed:.0f} с. "
         f"РФ прошли speed-test: {len(russian_passed)}, "
-        f"РФ hy2 исключены: {len(passthrough_russian)}"
+        f"РФ hy2 (прошли скорость): {len(passthrough_russian)}"
     )
 
 
