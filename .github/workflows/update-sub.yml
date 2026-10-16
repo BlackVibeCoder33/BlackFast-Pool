@@ -59,7 +59,7 @@ jobs:
           name: blackfast-subscription
           path: |
             out/Global-*.yaml
-            out/Hiddify-*.yaml
+            out/Hiddify-*.txt
           if-no-files-found: warn
 
       - name: Update Gist (all profiles)
