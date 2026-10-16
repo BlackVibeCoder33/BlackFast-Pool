@@ -179,6 +179,19 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                         final_list, group_prefix=prefix
                     )
                     new_profiles_yaml[path] = yaml_content
+
+                    # Hiddify-версия (упрощённый YAML)
+                    from core.hiddify_builder import build_hiddify_subscription
+                    hiddify_yaml = build_hiddify_subscription(
+                        final_list, group_prefix=prefix
+                    )
+                    hiddify_filename = f"Hiddify-{filename}"
+                    hiddify_path = base_dir() / "out" / hiddify_filename
+                    hiddify_path.write_text(hiddify_yaml, encoding="utf-8")
+                    logger.info(
+                        f"[hiddify] '{path}': {len(final_list)} записей "
+                        f"→ {hiddify_filename}"
+                    )
                     new_profiles_count[path] = len(final_list)
                     filename = profile.get("filename", f"{path}.yaml")
                     out_path = base_dir() / "out" / filename

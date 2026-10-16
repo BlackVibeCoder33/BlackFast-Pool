@@ -31,7 +31,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
+  min_speed_mbps: 3
   # Максимальная задержка до сервиса (мс). Если сервер отвечает на YouTube/TG/IG
   # медленнее — он не попадёт в профиль, даже если скорость высокая.
   # Особенно важно для hy2: у них нет TCP-пинга, это единственный способ
@@ -119,6 +119,14 @@ subscription_profiles:
       - flashscore
     min_speed_mbps: 0.5
     allow_russian: true
+  - name: "BlackFast High-Speed"
+    path: "high-speed"
+    filename: "Global-BlackFast-High-Speed.yaml"
+    group_prefix: "BlackFast High-Speed"
+    required_services:
+      - telegram
+      - youtube
+    min_speed_mbps: 5    
 
 # Типы, которые не проверяются TCP-чеком (UDP/QUIC-протоколы).
 # Они всё равно проходят service-check и speed-test через sing-box.
