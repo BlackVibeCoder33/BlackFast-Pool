@@ -160,19 +160,19 @@ async def run(config: dict[str, Any]) -> None:
             filename = profile.get("filename", f"{path}.yaml")
             (out_dir / filename).write_text(profile_yaml, encoding="utf-8")
 
-            # Hiddify-версия (упрощённый YAML)
+            # Hiddify-версия (base64 txt)
             from core.hiddify_builder import build_hiddify_subscription
-            hiddify_yaml = build_hiddify_subscription(
-                final_list, group_prefix=prefix
-            )
-            hiddify_filename = f"Hiddify-{filename}"
-            (out_dir / hiddify_filename).write_text(
-                hiddify_yaml, encoding="utf-8"
-            )
-            logger.info(
-                f"[hiddify] '{path}': {len(final_list)} записей "
-                f"→ {hiddify_filename}"
-            )
+            hiddify_b64 = build_hiddify_subscription(final_list)
+            if hiddify_b64:
+                base_name = filename.replace(".yaml", "")
+                hiddify_filename = f"Hiddify-{base_name}.txt"
+                (out_dir / hiddify_filename).write_text(
+                    hiddify_b64, encoding="utf-8"
+                )
+                logger.info(
+                    f"[hiddify] '{path}': {len(final_list)} записей "
+                    f"→ {hiddify_filename}"
+                )
             logger.info(
                 f"[profiles] '{path}': {len(final_list)} записей "
                 f"({len(selected)} уникальных)"
