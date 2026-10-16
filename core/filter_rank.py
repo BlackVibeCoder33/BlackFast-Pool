@@ -26,7 +26,10 @@ def build_profiles(
     proxies: list[dict[str, Any]],
     profiles: list[dict[str, Any]],
     min_speed_mbps: float,
+    max_service_latency_ms: float | None = None,
+    thresholds_by_type: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, list[dict[str, Any]]]:
+    thresholds_by_type = thresholds_by_type or {}
     result: dict[str, list[dict[str, Any]]] = {}
     for profile in profiles:
         path = profile["path"]
@@ -42,6 +45,7 @@ def build_profiles(
         selected: list[dict[str, Any]] = []
         excluded_by_pattern = 0
         excluded_russian = 0
+        excluded_by_latency = 0
         for p in proxies:
             if p.get("_is_russian") and not allow_russian:
                 excluded_russian += 1
@@ -51,6 +55,25 @@ def build_profiles(
                 continue
             if p.get("_speed_mbps", 0) < profile_min_speed:
                 continue
+
+            # Порог задержки до сервиса: свой для каждого типа прокси,
+            # если задан в thresholds_by_type, иначе — глобальный.
+            ptype = p.get("type") or ""
+            type_overrides = thresholds_by_type.get(ptype) or {}
+            effective_max_lat = type_overrides.get(
+                "max_service_latency_ms", max_service_latency_ms
+            )
+            if effective_max_lat is not None:
+                too_slow = False
+                for req in required:
+                    ms = svc.get(req, {}).get("ms", 0) or 0
+                    if ms > effective_max_lat:
+                        too_slow = True
+                        break
+                if too_slow:
+                    excluded_by_latency += 1
+                    continue
+
             if exclude_patterns:
                 haystack = f"{p.get('name') or ''} {p.get('server') or ''}".lower()
                 if any(pat in haystack for pat in exclude_patterns):
@@ -70,6 +93,8 @@ def build_profiles(
             excluded_str += f", исключено по фильтру: {excluded_by_pattern}"
         if excluded_russian:
             excluded_str += f", исключено РФ: {excluded_russian}"
+        if excluded_by_latency:
+            excluded_str += f", исключено по задержке: {excluded_by_latency}"
         logger.info(
             f"Профиль '{path}' ({'+'.join(required)}) "
             f"min_speed={profile_min_speed:g}"

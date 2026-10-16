@@ -129,14 +129,17 @@ def build_subscription(
         "proxies": cleaned,
         "proxy-groups": [
             {
+                # fallback держит активное соединение и переключается
+                # при разрыве. В отличие от url-test, он не доверяет
+                # одиночному ping-ответу, поэтому «полумертвые» сервера
+                # (отвечают на generate_204, но не пропускают трафик)
+                # быстро выпадают из ротации.
                 "name": auto_name,
-                "type": "url-test",
+                "type": "fallback",
                 "include-all": True,
                 "exclude-type": "Direct|Reject|RejectDrop|Compatible|Pass|Dns",
                 "url": "https://www.gstatic.com/generate_204",
-                "interval": 300,
-                "tolerance": 150,
-                "lazy": True,
+                "interval": 60,
                 "timeout": 5000,
                 "max-failed-times": 2,
                 "expected-status": 204,
