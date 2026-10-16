@@ -152,7 +152,13 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             profiles = config.get("subscription_profiles", [])
             if profiles:
                 profile_selections = build_profiles(
-                    speed_results, profiles, min_speed
+                    speed_results,
+                    profiles,
+                    min_speed,
+                    max_service_latency_ms=config["thresholds"].get(
+                        "max_service_latency_ms"
+                    ),
+                    thresholds_by_type=config.get("thresholds_by_type", {}),
                 )
                 new_profiles_yaml: dict[str, str] = {}
                 new_profiles_count: dict[str, int] = {}

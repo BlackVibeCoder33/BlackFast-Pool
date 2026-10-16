@@ -135,7 +135,15 @@ async def run(config: dict[str, Any]) -> None:
 
     profiles = config.get("subscription_profiles", [])
     if profiles:
-        selections = build_profiles(speed_results, profiles, min_speed)
+        selections = build_profiles(
+            speed_results,
+            profiles,
+            min_speed,
+            max_service_latency_ms=config["thresholds"].get(
+                "max_service_latency_ms"
+            ),
+            thresholds_by_type=config.get("thresholds_by_type", {}),
+        )
         for profile in profiles:
             path = profile["path"]
             prefix = profile.get("group_prefix", profile["name"])
