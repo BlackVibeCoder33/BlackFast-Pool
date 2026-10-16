@@ -5,6 +5,12 @@
 import base64
 import json
 from typing import Any
+from urllib.parse import quote, urlencode
+
+
+def _q(value: str) -> str:
+    """URL-encode значение для query/fragment."""
+    return quote(str(value), safe="")
 
 
 def build_hiddify_subscription(proxies: list[dict[str, Any]]) -> str:
@@ -39,34 +45,43 @@ def _build_vless_link(p: dict[str, Any]) -> str | None:
     if not (uuid and server and port):
         return None
 
-    params: list[str] = []
-    if p.get("flow"):
-        params.append(f"flow={p['flow']}")
-    if p.get("tls"):
-        params.append("security=tls")
-    if p.get("servername"):
-        params.append(f"sni={p['servername']}")
-    if p.get("client-fingerprint"):
-        params.append(f"fp={p['client-fingerprint']}")
     ro = p.get("reality-opts")
-    if ro:
+    is_reality = bool(ro and ro.get("public-key"))
+
+    params: list[str] = []
+
+    # security: reality ИЛИ tls — взаимоисключающие, не дублируем.
+    if is_reality:
         params.append("security=reality")
-        if ro.get("public-key"):
-            params.append(f"pbk={ro['public-key']}")
+        params.append(f"pbk={_q(ro['public-key'])}")
         if ro.get("short-id"):
-            params.append(f"sid={ro['short-id']}")
-    if p.get("network"):
-        params.append(f"type={p['network']}")
+            params.append(f"sid={_q(ro['short-id'])}")
+        # spx (spiderX) — обязателен по спецификации Xray, дефолт "/"
+        params.append("spx=%2F")
+    elif p.get("tls"):
+        params.append("security=tls")
+
+    if p.get("flow"):
+        params.append(f"flow={_q(p['flow'])}")
+    if p.get("servername"):
+        params.append(f"sni={_q(p['servername'])}")
+    if p.get("client-fingerprint"):
+        params.append(f"fp={_q(p['client-fingerprint'])}")
+
+    network = p.get("network") or "tcp"
+    params.append(f"type={_q(network)}")
+
     ws = p.get("ws-opts")
     if ws:
         if ws.get("path"):
-            params.append(f"path={ws['path']}")
-        if ws.get("headers", {}).get("Host"):
-            params.append(f"host={ws['headers']['Host']}")
+            params.append(f"path={_q(ws['path'])}")
+        host = ws.get("headers", {}).get("Host")
+        if host:
+            params.append(f"host={_q(host)}")
 
     name = p.get("name") or f"{server}:{port}"
     query = "&".join(params)
-    return f"vless://{uuid}@{server}:{port}?{query}#{name}"
+    return f"vless://{uuid}@{server}:{port}?{query}#{_q(name)}"
 
 
 def _build_vmess_link(p: dict[str, Any]) -> str | None:
@@ -111,15 +126,17 @@ def _build_trojan_link(p: dict[str, Any]) -> str | None:
 
     params: list[str] = []
     if p.get("sni"):
-        params.append(f"sni={p['sni']}")
+        params.append(f"sni={_q(p['sni'])}")
     if p.get("client-fingerprint"):
-        params.append(f"fp={p['client-fingerprint']}")
-    if p.get("network"):
-        params.append(f"type={p['network']}")
+        params.append(f"fp={_q(p['client-fingerprint'])}")
+    network = p.get("network") or "tcp"
+    params.append(f"type={_q(network)}")
 
     name = p.get("name") or f"{server}:{port}"
     query = "&".join(params)
-    return f"trojan://{password}@{server}:{port}?{query}#{name}"
+    return (
+        f"trojan://{_q(password)}@{server}:{port}?{query}#{_q(name)}"
+    )
 
 
 def _build_ss_link(p: dict[str, Any]) -> str | None:
@@ -146,14 +163,16 @@ def _build_hysteria2_link(p: dict[str, Any]) -> str | None:
 
     params: list[str] = []
     if p.get("sni"):
-        params.append(f"sni={p['sni']}")
+        params.append(f"sni={_q(p['sni'])}")
     if p.get("skip-cert-verify"):
         params.append("insecure=1")
     if p.get("obfs"):
-        params.append(f"obfs={p['obfs']}")
+        params.append(f"obfs={_q(p['obfs'])}")
     if p.get("obfs-password"):
-        params.append(f"obfs-password={p['obfs-password']}")
+        params.append(f"obfs-password={_q(p['obfs-password'])}")
 
     name = p.get("name") or f"{server}:{port}"
     query = "&".join(params)
-    return f"hysteria2://{password}@{server}:{port}?{query}#{name}"
+    return (
+        f"hysteria2://{_q(password)}@{server}:{port}?{query}#{_q(name)}"
+    )
