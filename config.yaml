@@ -31,13 +31,26 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 5
+  min_speed_mbps: 3
   # Максимальная задержка до сервиса (мс). Если сервер отвечает на YouTube/TG/IG
   # медленнее — он не попадёт в профиль, даже если скорость высокая.
   # Особенно важно для hy2: у них нет TCP-пинга, это единственный способ
   # отсеять «быстрые, но лагающие» сервера.
   # null = фильтр выключен. Значение задаётся в мс, например 2000 = 2 сек.
   max_service_latency_ms: null
+
+speed_test:
+  concurrent_pc: 6
+  concurrent_github: 8
+  test_urls:
+    # Google CDN (dl.google.com) — ближе всего к серверам YouTube
+    - "https://dl.google.com/dl/android/studio/install/3.5.2.0/android-studio-ide-191.5977832-windows.exe"
+    - "https://speed.cloudflare.com/__down?bytes=10000000"
+  timeout_seconds: 40
+  retest_count: 2
+  retest_pause_seconds: 2
+  min_measure_bytes: 5000000
+  peak_window_seconds: 0.5
 
 # Переопределение порогов для конкретных типов прокси.
 # Пример: hy2 может иметь свои правила (там нет TCP-чека).
@@ -83,6 +96,7 @@ subscription_profiles:
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
+    min_speed_mbps: 3
     allow_russian: true
   - name: "BlackFast TG+YT LS"
     path: "tg-yt-ls"

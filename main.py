@@ -21,7 +21,7 @@ from core.fetcher import (
 from core.filter_rank import (
     build_profiles,
     ensure_unique_names,
-    sort_alphabetically,
+    sort_by_speed,
 )
 from core.cache import (
     filter_banned,
@@ -207,7 +207,7 @@ async def run_pipeline(config: dict[str, Any]) -> None:
                         selected_tcp, tcp_map
                     )
                     base_list = list(expanded_tcp) + list(selected_hy2)
-                    final_list = sort_alphabetically(
+                    final_list = sort_by_speed(
                         ensure_unique_names(base_list)
                     )
                     if not final_list:
