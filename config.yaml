@@ -170,7 +170,7 @@ services:
     timeout_seconds: 7
 
 schedule:
-  update_interval_minutes: 45
+  update_interval_minutes: 60
 
 http_server:
   host: "0.0.0.0"
