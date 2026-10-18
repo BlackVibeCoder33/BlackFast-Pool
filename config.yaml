@@ -189,13 +189,13 @@ speed_test:
   concurrent_pc: 6
   concurrent_github: 8
   test_urls:
-    - "https://speed.cloudflare.com/__down?bytes=2000000"
-    - "https://speed.cloudflare.com/__down?bytes=1000000"
-    - "https://speed.cloudflare.com/__down?bytes=500000"
-  timeout_seconds: 20
+    # Google CDN (dl.google.com) — ближе всего к серверам YouTube
+    - "https://dl.google.com/dl/android/studio/install/3.5.2.0/android-studio-ide-191.5977832-windows.exe"
+    - "https://speed.cloudflare.com/__down?bytes=10000000"
+  timeout_seconds: 40
   retest_count: 2
   retest_pause_seconds: 2
-  min_measure_bytes: 300000
+  min_measure_bytes: 5000000
   peak_window_seconds: 0.5
 
 cache:
