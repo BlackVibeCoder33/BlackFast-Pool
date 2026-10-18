@@ -29,10 +29,13 @@ async def _measure_one(
         req_timeout = aiohttp.ClientTimeout(
             total=timeout, sock_connect=8, sock_read=timeout
         )
+        # Заголовок Range говорит серверу отдать только первые 5 МБ файла.
+        # Это защищает от скачивания гигабайтных файлов с Google CDN.
+        headers = {"Range": "bytes=0-5000000"}
         async with session.get(
-            test_url, proxy=proxy_url, timeout=req_timeout
+            test_url, proxy=proxy_url, timeout=req_timeout, headers=headers
         ) as resp:
-            if resp.status >= 400:
+            if resp.status >= 400 and resp.status != 206:
                 raise RuntimeError(f"http {resp.status}")
             window_start = time.perf_counter()
             window_bytes = 0

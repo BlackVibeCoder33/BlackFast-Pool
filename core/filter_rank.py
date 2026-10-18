@@ -119,3 +119,11 @@ def ensure_unique_names(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def sort_alphabetically(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(proxies, key=lambda p: (p.get("name") or "").lower())
+
+def sort_by_speed(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Сортирует прокси по убыванию скорости (самые быстрые в начале)."""
+    return sorted(
+        proxies,
+        key=lambda p: p.get("_speed_mbps", 0),
+        reverse=True
+    )
