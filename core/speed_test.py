@@ -29,8 +29,6 @@ async def _measure_one(
         req_timeout = aiohttp.ClientTimeout(
             total=timeout, sock_connect=8, sock_read=timeout
         )
-        # Заголовок Range говорит серверу отдать только первые 5 МБ файла.
-        # Это защищает от скачивания гигабайтных файлов с Google CDN.
         headers = {"Range": "bytes=0-5000000"}
         async with session.get(
             test_url, proxy=proxy_url, timeout=req_timeout, headers=headers
@@ -52,12 +50,30 @@ async def _measure_one(
             dt = now - window_start
             if window_bytes > 0 and dt > 0.05:
                 peak_rates.append(window_bytes * 8 / dt / 1_000_000)
+
+        # --- ТЕСТ НА РАЗРЫВ (Burst & Sustain) ---
+        if total >= min_bytes:
+            await asyncio.sleep(3)  # Пауза, чтобы DPI среагировал
+            headers2 = {"Range": f"bytes={total}-{total + 1000000}"}
+            async with session.get(
+                test_url, proxy=proxy_url, timeout=aiohttp.ClientTimeout(total=10), headers=headers2
+            ) as resp2:
+                if resp2.status >= 400 and resp2.status != 206:
+                    raise RuntimeError(f"sustain_http_{resp2.status}")
+                sustain_bytes = 0
+                async for chunk in resp2.content.iter_chunked(65536):
+                    sustain_bytes += len(chunk)
+                    if sustain_bytes >= 1000000:
+                        break
+                if sustain_bytes < 1000000:
+                    raise RuntimeError("sustain_too_low")
+
     except asyncio.TimeoutError:
         err = "timeout"
     except Exception as e:
         err = type(e).__name__
 
-    if total < min_bytes or not peak_rates:
+    if total < min_bytes or not peak_rates or err:
         return {"mbps": 0.0, "error": err or "too_slow", "bytes": total}
 
     peak_rates.sort(reverse=True)

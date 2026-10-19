@@ -300,6 +300,21 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     logger.info(f"Дедупликация: {len(proxies)} -> {len(unique)} (убрано {dupes})")
     return unique
 
+def _dedupe_by_endpoint(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Удаляет дубликаты по тройке (server, port, type)."""
+    seen = set()
+    unique = []
+    dupes = 0
+    for p in proxies:
+        key = (p.get("server"), p.get("port"), p.get("type"))
+        if key in seen:
+            dupes += 1
+            continue
+        seen.add(key)
+        unique.append(p)
+    if dupes:
+        logger.info(f"Дедупликация по endpoint: {len(proxies)} -> {len(unique)} (убрано {dupes})")
+    return unique
 
 async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     active = [s for s in subscriptions if s.get("enabled", True)]
@@ -319,6 +334,7 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
         all_proxies.extend(_parse_subscription(result, sub["name"]))
 
     deduped = _dedupe(all_proxies)
+    deduped = _dedupe_by_endpoint(deduped)  # Добиваем дубликаты по IP:port:type
 
     ru_count = 0
     for p in deduped:
