@@ -30,7 +30,7 @@ subscriptions:
 
 thresholds:
   max_ping_ms: 400
-  min_speed_mbps: 3
+  min_speed_mbps: 5
   # Максимальная задержка до сервиса (мс). Если сервер отвечает медленнее 2 секунд,
   # он не попадет в подписку.
   max_service_latency_ms: 2000
