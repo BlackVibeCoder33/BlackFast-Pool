@@ -355,7 +355,12 @@ def expand_representatives(
     for rep in representatives:
         key = (rep.get("server"), rep.get("port"))
         group = expansion_map.get(key, [rep])
-        for p in group:
+        
+        # Ограничиваем размножение: берем максимум 2 копии на один IP:порт.
+        # Это сохранит разные фингерпринты для обхода DPI, но не раздует подписку.
+        limited_group = group[:2]
+        
+        for p in limited_group:
             p["_tcp_ok"] = rep.get("_tcp_ok")
             p["_tcp_ping_ms"] = rep.get("_tcp_ping_ms")
             p["_services"] = rep.get("_services")
