@@ -27,7 +27,6 @@ subscriptions:
   - name: "wlunlocker-blacklist"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
     enabled: true
-    
 
 thresholds:
   max_ping_ms: 400
@@ -36,29 +35,10 @@ thresholds:
   # он не попадет в подписку.
   max_service_latency_ms: 2000
 
+# Переопределение порогов для конкретных типов прокси.
 thresholds_by_type:
   hysteria2:
     max_service_latency_ms: 2000
-
-speed_test:
-  concurrent_pc: 6
-  concurrent_github: 8
-  test_urls:
-    # Google CDN (dl.google.com) — ближе всего к серверам YouTube
-    - "https://dl.google.com/dl/android/studio/install/3.5.2.0/android-studio-ide-191.5977832-windows.exe"
-    - "https://speed.cloudflare.com/__down?bytes=10000000"
-  timeout_seconds: 40
-  retest_count: 2
-  retest_pause_seconds: 2
-  min_measure_bytes: 5000000
-  peak_window_seconds: 0.5
-
-# Переопределение порогов для конкретных типов прокси.
-# Пример: hy2 может иметь свои правила (там нет TCP-чека).
-# Если параметр не задан — берётся глобальный из thresholds.
-thresholds_by_type:
-  hysteria2:
-    max_service_latency_ms: null  # например: 2000 для hy2 — жёстче, чем для остальных
 
 anti_dpi:
   enabled: true
@@ -144,7 +124,6 @@ subscription_profiles:
     min_speed_mbps: 5    
 
 # Типы, которые не проверяются TCP-чеком (UDP/QUIC-протоколы).
-# Они всё равно проходят service-check и speed-test через sing-box.
 udp_types:
   - hysteria2
 
