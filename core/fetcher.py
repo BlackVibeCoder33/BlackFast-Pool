@@ -13,11 +13,25 @@ from loguru import logger
 async def _fetch_one(session: aiohttp.ClientSession, url: str, name: str) -> str:
     logger.info(f"-> Скачиваю '{name}': {url}")
     timeout = aiohttp.ClientTimeout(total=30)
-    async with session.get(url, timeout=timeout) as resp:
-        resp.raise_for_status()
-        text = await resp.text()
-    logger.info(f"   получено {len(text)} байт")
-    return text
+    
+    for attempt in range(3):  # 3 попытки
+        try:
+            async with session.get(url, timeout=timeout) as resp:
+                resp.raise_for_status()
+                text = await resp.text()
+            logger.info(f"   получено {len(text)} байт")
+            return text
+        except aiohttp.ClientResponseError as e:
+            if e.status == 429 or e.status >= 500:
+                logger.warning(f"   Ошибка {e.status} на '{name}'. Попытка {attempt+1}/3...")
+                await asyncio.sleep(2)
+            else:
+                raise
+        except Exception as e:
+            logger.warning(f"   Ошибка скачивания '{name}': {e}. Попытка {attempt+1}/3...")
+            await asyncio.sleep(2)
+            
+    raise RuntimeError(f"Не удалось скачать '{name}' после 3 попыток")
 
 
 def _parse_yaml(text: str, source_name: str) -> list[dict[str, Any]]:

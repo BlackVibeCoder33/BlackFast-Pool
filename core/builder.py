@@ -108,6 +108,9 @@ def build_subscription(
     group_prefix: str = "BlackFast",
 ) -> str:
     cleaned = [_clean_proxy(p) for p in proxies]
+    for p in cleaned:
+        p["udp"] = True  # Принудительно включаем UDP для совместимости
+
     auto_name = f"{group_prefix} Auto"
     manual_name = f"{group_prefix} Manual"
 
@@ -129,11 +132,6 @@ def build_subscription(
         "proxies": cleaned,
         "proxy-groups": [
             {
-                # fallback держит активное соединение и переключается
-                # при разрыве. В отличие от url-test, он не доверяет
-                # одиночному ping-ответу, поэтому «полумертвые» сервера
-                # (отвечают на generate_204, но не пропускают трафик)
-                # быстро выпадают из ротации.
                 "name": auto_name,
                 "type": "fallback",
                 "include-all": True,
@@ -146,9 +144,18 @@ def build_subscription(
                 "expected-status": 204,
             },
             {
+                "name": f"{group_prefix} Fastest",
+                "type": "url-test",
+                "include-all": True,
+                "exclude-type": "Direct|Reject|RejectDrop|Compatible|Pass|Dns",
+                "url": "https://www.gstatic.com/generate_204",
+                "interval": 600,
+                "tolerance": 50,
+            },
+            {
                 "name": manual_name,
                 "type": "select",
-                "proxies": [auto_name],
+                "proxies": [auto_name, f"{group_prefix} Fastest"],
                 "include-all": True,
                 "exclude-type": "Direct|Reject|RejectDrop|Compatible|Pass|Dns",
                 "default-selected": auto_name,
@@ -156,7 +163,7 @@ def build_subscription(
             {
                 "name": "GLOBAL",
                 "type": "select",
-                "proxies": [auto_name, manual_name],
+                "proxies": [auto_name, f"{group_prefix} Fastest", manual_name],
                 "default-selected": auto_name,
             },
         ],

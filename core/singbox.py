@@ -13,7 +13,10 @@ from loguru import logger
 from core.paths import base_dir
 
 
-SINGBOX_BIN = base_dir() / "bin" / "sing-box.exe"
+import sys # Убедись, что sys импортирован в начале файла
+
+BIN_NAME = "sing-box.exe" if sys.platform == "win32" else "sing-box"
+SINGBOX_BIN = base_dir() / "bin" / BIN_NAME
 HTTP_PROXY_BASE = 10800
 PORT_POOL_SIZE = 32
 _ANTI_DPI_CONFIG: dict[str, Any] = {}
