@@ -41,15 +41,23 @@ def build_profiles(
             for x in profile.get("exclude_name_contains", [])
             if x
         ]
+        exclude_geo = [str(x).lower() for x in profile.get("exclude_geo", [])]
 
         selected: list[dict[str, Any]] = []
         excluded_by_pattern = 0
         excluded_russian = 0
         excluded_by_latency = 0
+        excluded_by_geo = 0
         for p in proxies:
             if p.get("_is_russian") and not allow_russian:
                 excluded_russian += 1
                 continue
+            
+            if exclude_geo:
+                p_name = (p.get("name") or "").lower()
+                if any(geo in p_name for geo in exclude_geo):
+                    excluded_by_geo += 1
+                    continue
             svc = p.get("_services", {})
             if not all(svc.get(req, {}).get("ok") for req in required):
                 continue
@@ -88,6 +96,8 @@ def build_profiles(
             s = p.get("_source") or "unknown"
             sources[s] = sources.get(s, 0) + 1
         source_str = ", ".join(f"{k}={v}" for k, v in sources.items())
+        
+        # Восстанавливаем строку с исключениями
         excluded_str = ""
         if excluded_by_pattern:
             excluded_str += f", исключено по фильтру: {excluded_by_pattern}"
@@ -95,6 +105,9 @@ def build_profiles(
             excluded_str += f", исключено РФ: {excluded_russian}"
         if excluded_by_latency:
             excluded_str += f", исключено по задержке: {excluded_by_latency}"
+        if excluded_by_geo:
+            excluded_str += f", исключено по гео: {excluded_by_geo}"
+
         logger.info(
             f"Профиль '{path}' ({'+'.join(required)}) "
             f"min_speed={profile_min_speed:g}"

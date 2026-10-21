@@ -27,25 +27,37 @@ async def _measure_one(
 
     try:
         req_timeout = aiohttp.ClientTimeout(
-            total=timeout, sock_connect=8, sock_read=timeout
+            total=timeout, sock_connect=5, sock_read=timeout
         )
         headers = {"Range": "bytes=0-5000000"}
+        start_req_time = time.perf_counter()
+        first_chunk_time = None
+        
         async with session.get(
             test_url, proxy=proxy_url, timeout=req_timeout, headers=headers
         ) as resp:
             if resp.status >= 400 and resp.status != 206:
                 raise RuntimeError(f"http {resp.status}")
+                
             window_start = time.perf_counter()
             window_bytes = 0
-            async for chunk in resp.content.iter_chunked(65536):
+            async for chunk in resp.content.iter_chunked(16384): # Читаем меньшими кусками для точности
                 window_bytes += len(chunk)
                 total += len(chunk)
+                
+                # СТРАТЕГИЯ 3: Проверка "первых 50КБ за 2 секунды"
+                if total >= 50_000 and first_chunk_time is None:
+                    first_chunk_time = time.perf_counter() - start_req_time
+                    if first_chunk_time > 2.0:
+                        raise RuntimeError("slow_first_50kb")
+                
                 now = time.perf_counter()
                 dt = now - window_start
                 if dt >= peak_window_sec and window_bytes > 0:
                     peak_rates.append(window_bytes * 8 / dt / 1_000_000)
                     window_start = now
                     window_bytes = 0
+                    
             now = time.perf_counter()
             dt = now - window_start
             if window_bytes > 0 and dt > 0.05:
