@@ -106,6 +106,7 @@ def _clean_proxy(p: dict[str, Any]) -> dict[str, Any]:
 def build_subscription(
     proxies: list[dict[str, Any]],
     group_prefix: str = "BlackFast",
+    block_us_ca: bool = False,
 ) -> str:
     cleaned = [_clean_proxy(p) for p in proxies]
     for p in cleaned:
@@ -114,7 +115,17 @@ def build_subscription(
     auto_name = f"{group_prefix} Auto"
     manual_name = f"{group_prefix} Manual"
 
-    rules = list(BASE_RULES) + [f"MATCH,{manual_name}"]
+    rules = list(BASE_RULES)
+    
+    # Если профиль требует блокировки США/Канады (для Ютуба, Инсты и т.д.)
+    # Мы добавляем GEOIP-правила прямо в Karing. Он сам выкинет их при маршрутизации.
+    if block_us_ca:
+        rules.extend([
+            "GEOIP,US,REJECT",
+            "GEOIP,CA,REJECT",
+        ])
+        
+    rules.append(f"MATCH,{manual_name}")
 
     config: dict[str, Any] = {
         "mode": "rule",

@@ -55,7 +55,25 @@ def build_profiles(
             
             if exclude_geo:
                 p_name = (p.get("name") or "").lower()
-                if any(geo in p_name for geo in exclude_geo):
+                # Ищем целые слова/флаги, а не подстроки. 
+                # Иначе "US" совпадает с "Australia", "Belarus", "Cyprus" и т.д.
+                # Для флагов emoji оставляем прямое вхождение.
+                def _has_geo_match(name: str) -> bool:
+                    for geo in exclude_geo:
+                        if len(geo) <= 4:
+                            # Короткие коды ищем как отдельные слова
+                            import re as _re
+                            if _re.search(rf"\b{_re.escape(geo)}\b", name):
+                                return True
+                            # Для флагов emoji - прямое вхождение
+                            if not geo.isalnum() and geo in name:
+                                return True
+                        else:
+                            if geo in name:
+                                return True
+                    return False
+                
+                if _has_geo_match(p_name):
                     excluded_by_geo += 1
                     continue
             svc = p.get("_services", {})

@@ -174,7 +174,15 @@ async def run_core_pipeline(
                 logger.warning(f"[profiles] '{path}' пуст — пропуск")
                 continue
                 
-            result.yaml_subscriptions[path] = build_subscription(final_list, group_prefix=prefix)
+            # Передаем флаг блокировки, если в конфиге профиля задан exclude_geo
+            # (Но не применяем его для ChatGPT)
+            should_block_us = bool(profile.get("exclude_geo")) and "chatgpt" not in path
+            
+            result.yaml_subscriptions[path] = build_subscription(
+                final_list, 
+                group_prefix=prefix,
+                block_us_ca=should_block_us
+            )
             result.counts[path] = len(final_list)
 
             hiddify_b64 = build_hiddify_subscription(final_list)
