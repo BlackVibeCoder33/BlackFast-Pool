@@ -47,11 +47,25 @@ jobs:
           fi
           mv "${SINGBOX_BIN}" bin/sing-box
           chmod +x bin/sing-box
-          ln -sf sing-box bin/sing-box.exe
           rm -rf singbox.tar.gz sing-box-*-linux-amd64*
+
+      - name: Restore cache
+        uses: actions/cache@v4
+        with:
+          path: out/cache.json
+          key: blackfast-cache-${{ github.run_id }}
+          restore-keys: |
+            blackfast-cache-
 
       - name: Run pipeline
         run: python run_once.py
+
+      - name: Save cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: out/cache.json
+          key: blackfast-cache-${{ github.run_id }}
 
       - name: Upload subscription artifact
         uses: actions/upload-artifact@v4
@@ -60,6 +74,7 @@ jobs:
           path: |
             out/Global-*.yaml
             out/Hiddify-*.txt
+            out/stats.json
           if-no-files-found: warn
 
       - name: Update Gist (all profiles)
