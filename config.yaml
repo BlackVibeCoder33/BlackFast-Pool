@@ -13,6 +13,29 @@ subscriptions:
   - name: "igareck-SS-All"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_SS%2BAll_RUS_clash_rudirect.yaml"
     enabled: true
+  # --- IGARECK TXT ---
+  - name: "igareck-VLESS-mobile-txt"
+    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS_mobile.txt"
+    enabled: true
+  - name: "igareck-VLESS-txt"
+    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
+    enabled: true
+  - name: "igareck-SS-All-txt"
+    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_SS%2BAll_RUS.txt"
+    enabled: true
+  # --- IGARECK BITBUCKET (бывшие Yandex Translate) ---
+  - name: "igareck-bitbucket-mobile"
+    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
+    enabled: true
+  - name: "igareck-bitbucket-cidr-all"
+    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-CIDR-RU-all.txt"
+    enabled: true
+  - name: "igareck-bitbucket-cidr-checked"
+    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-CIDR-RU-checked.txt"
+    enabled: true
+  - name: "igareck-bitbucket-sni-all"
+    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-SNI-RU-all.txt"
+    enabled: true
   # --- KIZYAK ---
   - name: "kizyak-beta6BL"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta6BL.txt"
@@ -22,6 +45,105 @@ subscriptions:
     enabled: true
   - name: "kizyak-beta7"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta7.txt"
+    enabled: true
+  - name: "kizyak-beta8-txt"
+    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta8.txt"
+    enabled: true
+  - name: "kizyak-beta8-json"
+    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta8.json"
+    enabled: true
+  # --- HIZTIN (25 подписок) ---
+  - name: "hiztin-1"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/1.txt"
+    enabled: true
+  - name: "hiztin-2"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/2.txt"
+    enabled: true
+  - name: "hiztin-3"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/3.txt"
+    enabled: true
+  - name: "hiztin-4"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/4.txt"
+    enabled: true
+  - name: "hiztin-5"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/5.txt"
+    enabled: true
+  - name: "hiztin-6"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/6.txt"
+    enabled: true
+  - name: "hiztin-7"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/7.txt"
+    enabled: true
+  - name: "hiztin-8"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/8.txt"
+    enabled: true
+  - name: "hiztin-9"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/9.txt"
+    enabled: true
+  - name: "hiztin-10"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/10.txt"
+    enabled: true
+  - name: "hiztin-11"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/11.txt"
+    enabled: true
+  - name: "hiztin-12"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/12.txt"
+    enabled: true
+  - name: "hiztin-13"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/13.txt"
+    enabled: true
+  - name: "hiztin-14"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/14.txt"
+    enabled: true
+  - name: "hiztin-15"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/15.txt"
+    enabled: true
+  - name: "hiztin-16"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/16.txt"
+    enabled: true
+  - name: "hiztin-17"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/17.txt"
+    enabled: true
+  - name: "hiztin-18"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/18.txt"
+    enabled: true
+  - name: "hiztin-19"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/19.txt"
+    enabled: true
+  - name: "hiztin-20"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/20.txt"
+    enabled: true
+  - name: "hiztin-21"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/21.txt"
+    enabled: true
+  - name: "hiztin-22"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/22.txt"
+    enabled: true
+  - name: "hiztin-23"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/23.txt"
+    enabled: true
+  - name: "hiztin-24"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/24.txt"
+    enabled: true
+  - name: "hiztin-25"
+    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/25.txt"
+    enabled: true
+  # --- FLAT447 ---
+  - name: "flat-black"
+    url: "https://github.com/FLAT447/v2ray-lists/raw/refs/heads/main/BLACK_FULL.txt"
+    enabled: true
+  - name: "flat-white"
+    url: "https://github.com/FLAT447/v2ray-lists/raw/refs/heads/main/WHITE_FULL.txt"
+    enabled: true
+  # --- LUXXURIA / AVIAMASTERS ---
+  - name: "luxxuria-harvester"
+    url: "https://github.com/luxxuria/harvester/blob/main/non_ru.txt"
+    enabled: true
+  - name: "aviamasters-all"
+    url: "https://raw.githubusercontent.com/aviamastersgh/vpn-free-russia/main/all_configs.txt"
+    enabled: true
+  - name: "aviamasters-ru"
+    url: "https://raw.githubusercontent.com/aviamastersgh/vpn-free-russia/main/ru_configs.txt"
     enabled: true
   # --- WLUNLOCKER ---
   - name: "wlunlocker-blacklist"
