@@ -3,27 +3,19 @@
 # ============================================================
 
 subscriptions:
-  # --- IGARECK (Clash YAML) ---
+  # --- IGARECK ---
   - name: "igareck-VLESS-mobile"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_VLESS_RUS_mobile_clash_rudirect.yaml"
-    enabled: true
-  - name: "igareck-VLESS"
-    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_VLESS_RUS_clash_rudirect.yaml"
     enabled: true
   - name: "igareck-SS-All"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_SS%2BAll_RUS_clash_rudirect.yaml"
     enabled: true
-  # --- IGARECK TXT ---
   - name: "igareck-VLESS-mobile-txt"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS_mobile.txt"
-    enabled: true
-  - name: "igareck-VLESS-txt"
-    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS.txt"
     enabled: true
   - name: "igareck-SS-All-txt"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_SS%2BAll_RUS.txt"
     enabled: true
-  # --- IGARECK BITBUCKET (бывшие Yandex Translate) ---
   - name: "igareck-bitbucket-mobile"
     url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
     enabled: true
@@ -33,15 +25,10 @@ subscriptions:
   - name: "igareck-bitbucket-cidr-checked"
     url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-CIDR-RU-checked.txt"
     enabled: true
-  - name: "igareck-bitbucket-sni-all"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-SNI-RU-all.txt"
-    enabled: true
+
   # --- KIZYAK ---
   - name: "kizyak-beta6BL"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta6BL.txt"
-    enabled: true
-  - name: "kizyak-beta6"
-    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta6.txt"
     enabled: true
   - name: "kizyak-beta7"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta7.txt"
@@ -49,10 +36,8 @@ subscriptions:
   - name: "kizyak-beta8-txt"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta8.txt"
     enabled: true
-  - name: "kizyak-beta8-json"
-    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta8.json"
-    enabled: true
-  # --- HIZTIN (25 подписок) ---
+
+  # --- HIZTIN (только те, что дали результат) ---
   - name: "hiztin-1"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/1.txt"
     enabled: true
@@ -61,9 +46,6 @@ subscriptions:
     enabled: true
   - name: "hiztin-3"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/3.txt"
-    enabled: true
-  - name: "hiztin-4"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/4.txt"
     enabled: true
   - name: "hiztin-5"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/5.txt"
@@ -74,20 +56,11 @@ subscriptions:
   - name: "hiztin-7"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/7.txt"
     enabled: true
-  - name: "hiztin-8"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/8.txt"
-    enabled: true
-  - name: "hiztin-9"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/9.txt"
-    enabled: true
   - name: "hiztin-10"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/10.txt"
     enabled: true
   - name: "hiztin-11"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/11.txt"
-    enabled: true
-  - name: "hiztin-12"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/12.txt"
     enabled: true
   - name: "hiztin-13"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/13.txt"
@@ -95,23 +68,8 @@ subscriptions:
   - name: "hiztin-14"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/14.txt"
     enabled: true
-  - name: "hiztin-15"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/15.txt"
-    enabled: true
-  - name: "hiztin-16"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/16.txt"
-    enabled: true
   - name: "hiztin-17"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/17.txt"
-    enabled: true
-  - name: "hiztin-18"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/18.txt"
-    enabled: true
-  - name: "hiztin-19"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/19.txt"
-    enabled: true
-  - name: "hiztin-20"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/20.txt"
     enabled: true
   - name: "hiztin-21"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/21.txt"
@@ -119,15 +77,10 @@ subscriptions:
   - name: "hiztin-22"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/22.txt"
     enabled: true
-  - name: "hiztin-23"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/23.txt"
-    enabled: true
-  - name: "hiztin-24"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/24.txt"
-    enabled: true
   - name: "hiztin-25"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/25.txt"
     enabled: true
+
   # --- FLAT447 ---
   - name: "flat-black"
     url: "https://github.com/FLAT447/v2ray-lists/raw/refs/heads/main/BLACK_FULL.txt"
@@ -135,16 +88,12 @@ subscriptions:
   - name: "flat-white"
     url: "https://github.com/FLAT447/v2ray-lists/raw/refs/heads/main/WHITE_FULL.txt"
     enabled: true
-  # --- LUXXURIA / AVIAMASTERS ---
-  - name: "luxxuria-harvester"
-    url: "https://github.com/luxxuria/harvester/blob/main/non_ru.txt"
-    enabled: true
+
+  # --- AVIAMASTERS ---
   - name: "aviamasters-all"
     url: "https://raw.githubusercontent.com/aviamastersgh/vpn-free-russia/main/all_configs.txt"
     enabled: true
-  - name: "aviamasters-ru"
-    url: "https://raw.githubusercontent.com/aviamastersgh/vpn-free-russia/main/ru_configs.txt"
-    enabled: true
+
   # --- WLUNLOCKER ---
   - name: "wlunlocker-blacklist"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
@@ -176,6 +125,7 @@ subscription_profiles:
     required_services:
       - telegram
       - youtube
+    min_speed_mbps: 15
   - name: "BlackFast TG+YT+IG"
     path: "tg-yt-ig"
     filename: "Global-BlackFast-TG-YT-IG.yaml"
@@ -184,6 +134,7 @@ subscription_profiles:
       - telegram
       - youtube
       - instagram
+    min_speed_mbps: 15
   - name: "BlackFast TG+YT+IG+ChatGPT"
     path: "tg-yt-ig-chatgpt"
     filename: "Global-BlackFast-TG-YT-IG-ChatGPT.yaml"
@@ -193,13 +144,14 @@ subscription_profiles:
       - youtube
       - instagram
       - chatgpt
+    min_speed_mbps: 15
   - name: "BlackFast FlashScore"
     path: "flashscore"
     filename: "Global-BlackFast-FlashScore.yaml"
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
-    min_speed_mbps: 3
+    min_speed_mbps: 15
     allow_russian: true
   - name: "BlackFast TG+YT LS"
     path: "tg-yt-ls"
@@ -208,7 +160,7 @@ subscription_profiles:
     required_services:
       - telegram
       - youtube
-    min_speed_mbps: 0.5
+    min_speed_mbps: 1
   - name: "BlackFast TG+YT+IG LS"
     path: "tg-yt-ig-ls"
     filename: "Global-BlackFast-TG-YT-IG-LS.yaml"
@@ -217,7 +169,7 @@ subscription_profiles:
       - telegram
       - youtube
       - instagram
-    min_speed_mbps: 0.5
+    min_speed_mbps: 1
   - name: "BlackFast TG+YT+IG+ChatGPT LS"
     path: "tg-yt-ig-chatgpt-ls"
     filename: "Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml"
@@ -227,14 +179,14 @@ subscription_profiles:
       - youtube
       - instagram
       - chatgpt
-    min_speed_mbps: 0.5
+    min_speed_mbps: 1
   - name: "BlackFast FlashScore LS"
     path: "flashscore-ls"
     filename: "Global-BlackFast-FlashScore-LS.yaml"
     group_prefix: "BlackFast FlashScore LS"
     required_services:
       - flashscore
-    min_speed_mbps: 0.5
+    min_speed_mbps: 1
     allow_russian: true
   - name: "BlackFast High-Speed"
     path: "high-speed"
@@ -243,7 +195,26 @@ subscription_profiles:
     required_services:
       - telegram
       - youtube
-    min_speed_mbps: 5    
+    min_speed_mbps: 50
+  - name: "BlackFast High-Speed IG"
+    path: "high-speed-ig"
+    filename: "Global-BlackFast-High-Speed-IG.yaml"
+    group_prefix: "BlackFast High-Speed IG"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+    min_speed_mbps: 50
+  - name: "BlackFast High-Speed ChatGPT"
+    path: "high-speed-chatgpt"
+    filename: "Global-BlackFast-High-Speed-ChatGPT.yaml"
+    group_prefix: "BlackFast High-Speed ChatGPT"
+    required_services:
+      - telegram
+      - youtube
+      - instagram
+      - chatgpt
+    min_speed_mbps: 50
 
 # Типы, которые не проверяются TCP-чеком (UDP/QUIC-протоколы).
 udp_types:
