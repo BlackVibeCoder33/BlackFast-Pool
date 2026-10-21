@@ -2,43 +2,21 @@ import asyncio
 import socket
 import sys
 import time
-from pathlib import Path
 from typing import Any
 
-import aiohttp
 import yaml
 from aiohttp import web
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 
 from core.paths import base_dir
-from core.builder import build_subscription
-from core.fetcher import (
-    expand_representatives,
-    fetch_all,
-    group_by_server_port,
-)
-from core.filter_rank import (
-    build_profiles,
-    ensure_unique_names,
-    sort_by_speed,
-)
-from core.cache import (
-    filter_banned,
-    load_cache,
-    save_cache,
-    update_after_run,
-)
-from core.service_check import get_service_concurrent, service_check_all
+from core.pipeline import run_core_pipeline, PipelineResult
 from core.singbox import set_anti_dpi
-from core.speed_test import get_speed_concurrent, speed_test_all
-from core.tcp_check import tcp_check_all
 
 
 class PoolState:
     def __init__(self) -> None:
-        self.profiles_yaml: dict[str, str] = {}
-        self.profiles_count: dict[str, int] = {}
+        self.result = PipelineResult()
         self.last_updated: float = 0.0
         self.lock = asyncio.Lock()
 
@@ -51,208 +29,9 @@ async def run_pipeline(config: dict[str, Any]) -> None:
         logger.warning("Pipeline уже идёт — пропуск итерации")
         return
     async with state.lock:
-        logger.info("=" * 60)
-        logger.info("Pipeline: старт")
-        logger.info("=" * 60)
-        t_start = time.time()
-
         try:
-            proxies_all = await fetch_all(config["subscriptions"])
-            logger.info(f"[1] После парсинга: {len(proxies_all)}")
-
-            udp_types = set(config.get("udp_types", ["hysteria2"]))
-
-            # --- Разделяем прокси на два независимых потока ---
-            # TCP-протоколы (VLESS/VMess/SS/Trojan) проходят полный TCP-чек + service + speed.
-            # hy2 (QUIC) TCP-чек пропускают, но честно проходят service-check и speed-test.
-            # Это исключает «заражение» результатов: hy2 и TCP больше не смешиваются
-            # в одной группе (server, port).
-            tcp_proxies = [
-                p for p in proxies_all if p.get("type") not in udp_types
-            ]
-            hy2_proxies = [
-                p for p in proxies_all if p.get("type") in udp_types
-            ]
-            logger.info(
-                f"[1.5] Разделение: TCP-протоколов {len(tcp_proxies)}, "
-                f"UDP/hy2 {len(hy2_proxies)}"
-            )
-
-            # --- TCP pipeline (как было до внедрения hy2) ---
-            tcp_reps, tcp_map = group_by_server_port(tcp_proxies)
-            logger.info(f"[1.5] TCP уникальных (server, port): {len(tcp_reps)}")
-
-            tcp_cfg = config.get("tcp_check", {})
-            tcp_alive, _ = await tcp_check_all(
-                tcp_reps,
-                concurrent=tcp_cfg.get("concurrent", 200),
-                timeout=float(tcp_cfg.get("timeout_seconds", 3)),
-            )
-            max_ping = config["thresholds"]["max_ping_ms"]
-            tcp_alive = [
-                p for p in tcp_alive if p.get("_tcp_ping_ms", 1e9) <= max_ping
-            ]
-            logger.info(f"[2] TCP живых и ≤ {max_ping} мс: {len(tcp_alive)}")
-
-            # --- hy2 pipeline: TCP-чек пропускаем, помечаем «живыми» ---
-            for p in hy2_proxies:
-                p["_tcp_ok"] = True
-                p["_tcp_ping_ms"] = 0.0
-                p["_tcp_skip"] = True
-            logger.info(f"[2] hy2 к service-check: {len(hy2_proxies)}")
-
-            # Объединяем для дальнейших этапов (service-check + speed-test)
-            alive = tcp_alive + hy2_proxies
-            logger.info(f"[2.5] Всего к service-check: {len(alive)}")
-
-            st = config.get("speed_test", {})
-            scfg = config.get("service_check", {})
-            is_github = False
-            svc_concurrent = get_service_concurrent(config, is_github)
-            spd_concurrent = get_speed_concurrent(config, is_github)
-
-            cache_cfg = config.get("cache", {}) or {}
-            cache_enabled = bool(cache_cfg.get("enabled", False))
-            cache_path = base_dir() / cache_cfg.get(
-                "cache_file", "out/cache.json"
-            )
-            cache_data = load_cache(cache_path) if cache_enabled else {"servers": {}}
-
-            if cache_enabled:
-                alive = filter_banned(
-                    alive,
-                    cache_data,
-                    float(cache_cfg.get("ban_duration_hours", 2)),
-                )
-
-            checked = await service_check_all(
-                alive,
-                config["services"],
-                concurrent=svc_concurrent,
-                scfg=scfg,
-            )
-
-            def _has_any_service(p: dict[str, Any]) -> bool:
-                svc = p.get("_services", {})
-                return any(v.get("ok") for v in svc.values())
-
-            relevant = [p for p in checked if _has_any_service(p)]
-            logger.info(
-                f"[2.5] Прошли хотя бы один сервис: {len(relevant)} "
-                f"из {len(checked)}"
-            )
-
-            test_urls = st.get("test_urls")
-            if not test_urls:
-                test_urls = [
-                    st.get(
-                        "test_url",
-                        "https://speed.cloudflare.com/__down?bytes=2000000",
-                    )
-                ]
-            timeout = float(st.get("timeout_seconds", 20))
-            retest = int(st.get("retest_count", 2))
-            retest_pause = float(st.get("retest_pause_seconds", 0))
-            min_bytes = int(st.get("min_measure_bytes", 300000))
-            peak_win = float(st.get("peak_window_seconds", 0.5))
-            speed_results = await speed_test_all(
-                relevant,
-                test_urls=test_urls,
-                timeout=timeout,
-                concurrent=spd_concurrent,
-                retest_count=retest,
-                retest_pause_seconds=retest_pause,
-                min_bytes=min_bytes,
-                peak_window_sec=peak_win,
-            )
-
-            if cache_enabled:
-                cache_data = update_after_run(
-                    speed_results,
-                    cache_data,
-                    int(cache_cfg.get("ban_after_consecutive_failures", 3)),
-                    float(cache_cfg.get("ban_duration_hours", 2)),
-                )
-                save_cache(cache_path, cache_data)
-
-            min_speed = config["thresholds"]["min_speed_mbps"]
-
-            profiles = config.get("subscription_profiles", [])
-            if profiles:
-                profile_selections = build_profiles(
-                    speed_results,
-                    profiles,
-                    min_speed,
-                    max_service_latency_ms=config["thresholds"].get(
-                        "max_service_latency_ms"
-                    ),
-                    thresholds_by_type=config.get("thresholds_by_type", {}),
-                )
-                new_profiles_yaml: dict[str, str] = {}
-                new_profiles_count: dict[str, int] = {}
-                for profile in profiles:
-                    path = profile["path"]
-                    name = profile["name"]
-                    prefix = profile.get("group_prefix", name)
-                    selected = profile_selections.get(path, [])
-                    # TCP-выборку разворачиваем через tcp_map,
-                    # hy2 добавляем как есть (каждый hy2 — самостоятельный representative).
-                    selected_tcp = [
-                        p for p in selected if not p.get("_tcp_skip")
-                    ]
-                    selected_hy2 = [
-                        p for p in selected if p.get("_tcp_skip")
-                    ]
-                    expanded_tcp = expand_representatives(
-                        selected_tcp, tcp_map
-                    )
-                    base_list = list(expanded_tcp) + list(selected_hy2)
-                    final_list = sort_by_speed(
-                        ensure_unique_names(base_list)
-                    )
-                    if not final_list:
-                        logger.warning(f"[profiles] '{path}' пуст — пропуск")
-                        continue
-                    # filename определяем ДО использования (был баг: использовался ниже).
-                    filename = profile.get("filename", f"{path}.yaml")
-                    yaml_content = build_subscription(
-                        final_list, group_prefix=prefix
-                    )
-                    new_profiles_yaml[path] = yaml_content
-
-                    # Hiddify-версия (base64 txt)
-                    from core.hiddify_builder import build_hiddify_subscription
-                    hiddify_b64 = build_hiddify_subscription(final_list)
-                    if hiddify_b64:
-                        base_name = filename.replace(".yaml", "")
-                        hiddify_filename = f"Hiddify-{base_name}.txt"
-                        hiddify_path = base_dir() / "out" / hiddify_filename
-                        hiddify_path.write_text(hiddify_b64, encoding="utf-8")
-                        logger.info(
-                            f"[hiddify] '{path}': {len(final_list)} записей "
-                            f"→ {hiddify_filename}"
-                        )
-                    new_profiles_count[path] = len(final_list)
-                    out_path = base_dir() / "out" / filename
-                    out_path.parent.mkdir(parents=True, exist_ok=True)
-                    out_path.write_text(yaml_content, encoding="utf-8")
-                    logger.info(
-                        f"[profiles] '{path}': {len(final_list)} записей "
-                        f"({len(selected)} уникальных) → {out_path.name}"
-                    )
-                state.profiles_yaml = new_profiles_yaml
-                state.profiles_count = new_profiles_count
-
+            state.result = await run_core_pipeline(config, is_github=False)
             state.last_updated = time.time()
-            elapsed = time.time() - t_start
-            russian_passed = [
-                p for p in speed_results if p.get("_is_russian")
-            ]
-            logger.info(
-                f"[4] Pipeline завершён за {elapsed:.0f} с. "
-                f"{len(state.profiles_yaml)} профилей. "
-                f"РФ прошли speed-test: {len(russian_passed)}"
-            )
 
             local_ip = _get_local_ip()
             port = int(config["http_server"]["port"])
@@ -260,14 +39,10 @@ async def run_pipeline(config: dict[str, Any]) -> None:
             logger.info("ГОТОВЫЕ ССЫЛКИ ДЛЯ KARING:")
             for profile in config.get("subscription_profiles", []):
                 path = profile["path"]
-                if path in state.profiles_yaml:
-                    count = state.profiles_count.get(path, 0)
-                    logger.info(
-                        f"  {profile['name']} ({count} серверов):"
-                    )
-                    logger.info(
-                        f"    http://{local_ip}:{port}/sub/{path}"
-                    )
+                if path in state.result.yaml_subscriptions:
+                    count = state.result.counts.get(path, 0)
+                    logger.info(f"  {profile['name']} ({count} серверов):")
+                    logger.info(f"    http://{local_ip}:{port}/sub/{path}")
             logger.info("=" * 60)
         except Exception as e:
             logger.exception(f"Ошибка pipeline: {e}")
@@ -275,14 +50,14 @@ async def run_pipeline(config: dict[str, Any]) -> None:
 
 async def handle_sub_profile(request: web.Request) -> web.Response:
     path = request.match_info["profile"]
-    if path not in state.profiles_yaml:
-        available = ", ".join(sorted(state.profiles_yaml.keys())) or "(none)"
+    if path not in state.result.yaml_subscriptions:
+        available = ", ".join(sorted(state.result.yaml_subscriptions.keys())) or "(none)"
         return web.Response(
             status=404,
             text=f"Profile '{path}' not found. Available: {available}",
         )
     return web.Response(
-        text=state.profiles_yaml[path],
+        text=state.result.yaml_subscriptions[path],
         content_type="text/plain",
         headers={"Content-Disposition": f'attachment; filename="{path}.yaml"'},
     )
@@ -298,9 +73,9 @@ async def handle_status(request: web.Request) -> web.Response:
         "",
         "Profiles:",
     ]
-    for path in sorted(state.profiles_yaml.keys()):
+    for path in sorted(state.result.yaml_subscriptions.keys()):
         lines.append(
-            f"  /sub/{path}  →  {state.profiles_count.get(path, 0)} servers"
+            f"  /sub/{path}  →  {state.result.counts.get(path, 0)} servers"
         )
     return web.Response(text="\n".join(lines))
 
@@ -332,7 +107,6 @@ async def main() -> None:
     with open(base_dir() / "config.yaml", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
-    from core.singbox import set_anti_dpi
     set_anti_dpi(config.get("anti_dpi", {}))
 
     asyncio.create_task(run_pipeline(config))
