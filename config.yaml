@@ -126,6 +126,7 @@ subscription_profiles:
       - telegram
       - youtube
     min_speed_mbps: 15
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast TG+YT+IG"
     path: "tg-yt-ig"
     filename: "Global-BlackFast-TG-YT-IG.yaml"
@@ -135,6 +136,7 @@ subscription_profiles:
       - youtube
       - instagram
     min_speed_mbps: 15
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast TG+YT+IG+ChatGPT"
     path: "tg-yt-ig-chatgpt"
     filename: "Global-BlackFast-TG-YT-IG-ChatGPT.yaml"
@@ -153,6 +155,7 @@ subscription_profiles:
       - flashscore
     min_speed_mbps: 15
     allow_russian: true
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast TG+YT LS"
     path: "tg-yt-ls"
     filename: "Global-BlackFast-TG-YT-LS.yaml"
@@ -161,6 +164,7 @@ subscription_profiles:
       - telegram
       - youtube
     min_speed_mbps: 1
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast TG+YT+IG LS"
     path: "tg-yt-ig-ls"
     filename: "Global-BlackFast-TG-YT-IG-LS.yaml"
@@ -170,6 +174,7 @@ subscription_profiles:
       - youtube
       - instagram
     min_speed_mbps: 1
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast TG+YT+IG+ChatGPT LS"
     path: "tg-yt-ig-chatgpt-ls"
     filename: "Global-BlackFast-TG-YT-IG-ChatGPT-LS.yaml"
@@ -188,6 +193,7 @@ subscription_profiles:
       - flashscore
     min_speed_mbps: 1
     allow_russian: true
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast High-Speed"
     path: "high-speed"
     filename: "Global-BlackFast-High-Speed.yaml"
@@ -196,6 +202,7 @@ subscription_profiles:
       - telegram
       - youtube
     min_speed_mbps: 50
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast High-Speed IG"
     path: "high-speed-ig"
     filename: "Global-BlackFast-High-Speed-IG.yaml"
@@ -205,6 +212,7 @@ subscription_profiles:
       - youtube
       - instagram
     min_speed_mbps: 50
+    exclude_geo: ["US", "USA", "United States", "Canada", "CA", "🇺🇸", "🇨🇦"]
   - name: "BlackFast High-Speed ChatGPT"
     path: "high-speed-chatgpt"
     filename: "Global-BlackFast-High-Speed-ChatGPT.yaml"
