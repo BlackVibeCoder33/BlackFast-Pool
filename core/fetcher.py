@@ -297,21 +297,30 @@ def _is_russian_proxy(proxy: dict[str, Any]) -> bool:
 
 
 def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Глобальная дедупликация.
+    Сравнивает сервера по: Тип + Сервер + Порт + UUID/Пароль + Шифр (для SS).
+    Игнорирует имя, чтобы один и тот же сервер из 10 источников не тестировался 10 раз.
+    """
     seen: set[str] = set()
     unique: list[dict[str, Any]] = []
     dupes = 0
     for p in proxies:
-        clean = {k: v for k, v in p.items() if not k.startswith("_")}
-        try:
-            key = json.dumps(clean, sort_keys=True, ensure_ascii=False, default=str)
-        except (TypeError, ValueError):
-            key = str(sorted(clean.items()))
+        server = str(p.get("server", "")).lower()
+        port = str(p.get("port", ""))
+        ptype = str(p.get("type", ""))
+        auth = str(p.get("uuid") or p.get("password") or "")
+        cipher = str(p.get("cipher", ""))
+        
+        key = f"{ptype}:{server}:{port}:{auth}:{cipher}"
+        
         if key in seen:
             dupes += 1
             continue
         seen.add(key)
         unique.append(p)
-    logger.info(f"Дедупликация: {len(proxies)} -> {len(unique)} (убрано {dupes})")
+        
+    logger.info(f"Глобальная дедупликация: {len(proxies)} -> {len(unique)} (убрано {dupes} дублей)")
     return unique
 
 async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
