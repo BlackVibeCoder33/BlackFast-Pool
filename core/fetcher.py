@@ -374,22 +374,20 @@ def expand_representatives(
     representatives: list[dict[str, Any]],
     expansion_map: dict[tuple, list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
+    """
+    Возвращает только тестированные конфиги (по одному на сервер).
+    
+    Раньше добавляли до 2 копий на IP:порт ради "резервного фингерпринта",
+    но вторая копия не проходила тесты (service-check, speed-test) и могла
+    оказаться мёртвой — это создавало "фантомные" серверы в Karing,
+    которые он честно пробовал в фоне, но они не отвечали.
+    
+    Сейчас в пуле ~300+ уникальных серверов, поэтому резерв на каждом
+    отдельном сервере не нужен — если фингерпринт одного забанят,
+    есть ещё 300 других.
+    """
     expanded: list[dict[str, Any]] = []
     for rep in representatives:
-        key = (rep.get("server"), rep.get("port"))
-        group = expansion_map.get(key, [rep])
-        
-        # Ограничиваем размножение: берем максимум 2 копии на один IP:порт.
-        # Это сохранит разные фингерпринты для обхода DPI, но не раздует подписку.
-        limited_group = group[:2]
-        
-        for p in limited_group:
-            p["_tcp_ok"] = rep.get("_tcp_ok")
-            p["_tcp_ping_ms"] = rep.get("_tcp_ping_ms")
-            p["_services"] = rep.get("_services")
-            p["_speed_mbps"] = rep.get("_speed_mbps")
-            p["_speed_error"] = rep.get("_speed_error")
-            if rep.get("_is_russian"):
-                p["_is_russian"] = True
-            expanded.append(p)
+        # Берём ТОЛЬКО тестированный representative. Без размножения.
+        expanded.append(rep)
     return expanded
