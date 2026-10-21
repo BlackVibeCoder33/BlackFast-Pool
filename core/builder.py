@@ -100,7 +100,16 @@ INTERNAL_PREFIX = "_"
 
 
 def _clean_proxy(p: dict[str, Any]) -> dict[str, Any]:
-    return {k: v for k, v in p.items() if not k.startswith(INTERNAL_PREFIX)}
+    cleaned = {k: v for k, v in p.items() if not k.startswith(INTERNAL_PREFIX)}
+    # Пробрасываем метрики в YAML как x-поля (Karing/Mihomo их игнорирует).
+    # При жалобе «этот сервер тормозит» сразу видно, что мы намерили.
+    speed = p.get("_speed_mbps")
+    if speed:
+        cleaned["x-speed-mbps"] = round(float(speed), 2)
+    downloaded = p.get("_downloaded_bytes")
+    if downloaded:
+        cleaned["x-downloaded-kb"] = int(downloaded) // 1024
+    return cleaned
 
 
 def build_subscription(

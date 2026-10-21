@@ -3,6 +3,30 @@ from typing import Any
 from loguru import logger
 
 
+_JUNK_NAME_WORDS = {
+    "channel", "free", "all", "server", "vpn", "node",
+    "config", "unlimited", "join", "telegram",
+}
+
+
+def _code_to_flag(code: str) -> str:
+    """ISO-код страны → эмодзи-флаг."""
+    if not code or len(code) != 2 or not code.isalpha():
+        return ""
+    return "".join(chr(0x1F1E6 + ord(c) - ord("A")) for c in code.upper())
+
+
+def _is_junk_name(name: str) -> bool:
+    n = name.strip()
+    if not n:
+        return True
+    if len(n) < 4 and not any(c.isalpha() for c in n):
+        return True
+    if n.lower() in _JUNK_NAME_WORDS:
+        return True
+    return False
+
+
 def filter_and_rank(
     proxies: list[dict[str, Any]],
     required_services: list[str],
@@ -42,6 +66,9 @@ def build_profiles(
             if x
         ]
         exclude_geo = [str(x).lower() for x in profile.get("exclude_geo", [])]
+        exclude_geo_iso = {
+            g.upper() for g in exclude_geo if len(g) == 2 and g.isalpha()
+        }
 
         selected: list[dict[str, Any]] = []
         excluded_by_pattern = 0
@@ -54,7 +81,13 @@ def build_profiles(
                 continue
             
             if exclude_geo:
-                p_name = (p.get("name") or "").lower()
+                # Собираем все имена дублей (их сохраняет _dedupe в _all_names),
+                # чтобы гео-подсказка из «мёртвого» дубля не терялась.
+                all_names = p.get("_all_names") or []
+                if not all_names:
+                    all_names = [p.get("name") or ""]
+                all_names = [str(n).lower() for n in all_names if n]
+
                 # Ищем целые слова/флаги, а не подстроки. 
                 # Иначе "US" совпадает с "Australia", "Belarus", "Cyprus" и т.д.
                 # Для флагов emoji оставляем прямое вхождение.
@@ -73,7 +106,15 @@ def build_profiles(
                                 return True
                     return False
                 
-                if _has_geo_match(p_name):
+                if any(_has_geo_match(n) for n in all_names):
+                    excluded_by_geo += 1
+                    continue
+
+                # Гео-детект по IP: если _country_code известен и совпадает
+                # с ISO-кодом из exclude_geo — исключаем. Закрывает
+                # «скрытых американцев» с нейтральными именами.
+                country = (p.get("_country_code") or "").upper()
+                if country and country in exclude_geo_iso:
                     excluded_by_geo += 1
                     continue
             svc = p.get("_services", {})
@@ -138,7 +179,22 @@ def build_profiles(
 def ensure_unique_names(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     seen: dict[str, int] = {}
     for p in proxies:
-        base = (p.get("name") or "Server").strip()
+        base = (p.get("name") or "").strip()
+
+        # Мусорные имена («Channel», «Free», «?», «✨») заменяем на
+        # «{флаг} {код} {server}:{port}» — так в Karing сразу видно,
+        # что это за сервер. Гео берём из _country_code (geoip.py).
+        if _is_junk_name(base):
+            code = str(p.get("_country_code") or "").upper()
+            flag = _code_to_flag(code) if code else ""
+            server = str(p.get("server") or "?")
+            port = p.get("port") or "?"
+            prefix = f"{flag} {code}".strip() if code else "Server"
+            base = f"{prefix} {server}:{port}"
+
+        if not base:
+            base = "Server"
+
         if base not in seen:
             seen[base] = 0
             p["name"] = base
@@ -152,9 +208,16 @@ def sort_alphabetically(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(proxies, key=lambda p: (p.get("name") or "").lower())
 
 def sort_by_speed(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Сортирует прокси по убыванию скорости (самые быстрые в начале)."""
-    return sorted(
-        proxies,
-        key=lambda p: p.get("_speed_mbps", 0),
-        reverse=True
-    )
+    """Сортирует прокси по убыванию скорости с бонусом за стабильность.
+
+    Сервер с длинным success_streak (из кэша) получает бонус до 30%
+    к скорости — так «однодневки», которые один раз дали 500 Mbps
+    и больше не появлялись, уступают стабильным 100-Mbps серверам.
+    """
+    def _key(p: dict[str, Any]) -> float:
+        speed = float(p.get("_speed_mbps", 0) or 0)
+        streak = int(p.get("_success_streak", 0) or 0)
+        stability_bonus = 1.0 + 0.03 * min(streak, 10)
+        return speed * stability_bonus
+
+    return sorted(proxies, key=_key, reverse=True)

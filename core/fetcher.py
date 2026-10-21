@@ -301,9 +301,14 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     Глобальная дедупликация.
     Сравнивает сервера по: Тип + Сервер + Порт + UUID/Пароль + Шифр (для SS).
     Игнорирует имя, чтобы один и тот же сервер из 10 источников не тестировался 10 раз.
+
+    Гео-подсказки из дублей переносятся на выжившего:
+    - `_is_russian` ставится, если хотя бы один дубль был русским;
+    - `_all_names` собирает имена ВСЕХ дублей — geo-фильтр проверяет их все,
+      чтобы «скрытый американец» не просочился из-за того, что выживший дубль
+      носил нейтральное имя вроде «Node 123».
     """
-    seen: set[str] = set()
-    unique: list[dict[str, Any]] = []
+    by_key: dict[str, dict[str, Any]] = {}
     dupes = 0
     for p in proxies:
         server = str(p.get("server", "")).lower()
@@ -311,16 +316,29 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         ptype = str(p.get("type", ""))
         auth = str(p.get("uuid") or p.get("password") or "")
         cipher = str(p.get("cipher", ""))
-        
+
         key = f"{ptype}:{server}:{port}:{auth}:{cipher}"
-        
-        if key in seen:
+        name = str(p.get("name") or "").strip()
+
+        if key in by_key:
             dupes += 1
+            survivor = by_key[key]
+            if name:
+                names = survivor["_all_names"]
+                if name not in names:
+                    names.append(name)
+            if p.get("_is_russian"):
+                survivor["_is_russian"] = True
             continue
-        seen.add(key)
-        unique.append(p)
-        
-    logger.info(f"Глобальная дедупликация: {len(proxies)} -> {len(unique)} (убрано {dupes} дублей)")
+
+        p["_all_names"] = [name] if name else []
+        by_key[key] = p
+
+    unique = list(by_key.values())
+    logger.info(
+        f"Глобальная дедупликация: {len(proxies)} -> {len(unique)} "
+        f"(убрано {dupes} дублей)"
+    )
     return unique
 
 async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -340,15 +358,22 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
             continue
         all_proxies.extend(_parse_subscription(result, sub["name"]))
 
-    deduped = _dedupe(all_proxies)
-
-    ru_count = 0
-    for p in deduped:
+    # РФ-флаг ставим ДО дедупа, чтобы он переносился на выжившего
+    # даже если у выжившего имя не содержит гео-подсказок.
+    ru_before = 0
+    for p in all_proxies:
         if _is_russian_proxy(p):
             p["_is_russian"] = True
-            ru_count += 1
+            ru_before += 1
+
+    deduped = _dedupe(all_proxies)
+
+    ru_count = sum(1 for p in deduped if p.get("_is_russian"))
     if ru_count:
-        logger.info(f"Помечено РФ-серверов: {ru_count}")
+        logger.info(
+            f"Помечено РФ-серверов до дедупа: {ru_before}, "
+            f"после дедупа: {ru_count}"
+        )
 
     return deduped
 

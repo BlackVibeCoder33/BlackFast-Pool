@@ -31,7 +31,7 @@ async def _measure_one(
         )
         headers = {"Range": "bytes=0-5000000"}
         start_req_time = time.perf_counter()
-        first_chunk_time = None
+        slow_start_detected = False
         
         async with session.get(
             test_url, proxy=proxy_url, timeout=req_timeout, headers=headers
@@ -44,12 +44,19 @@ async def _measure_one(
             async for chunk in resp.content.iter_chunked(16384): # Читаем меньшими кусками для точности
                 window_bytes += len(chunk)
                 total += len(chunk)
+                elapsed = time.perf_counter() - start_req_time
                 
-                # СТРАТЕГИЯ 3: Проверка "первых 50КБ за 2 секунды"
-                if total >= 50_000 and first_chunk_time is None:
-                    first_chunk_time = time.perf_counter() - start_req_time
-                    if first_chunk_time > 2.0:
-                        raise RuntimeError("slow_first_50kb")
+                # Двухступенчатая проверка старта:
+                # - 50 КБ за 2 с = быстрый старт (CDN cold start часто медленный)
+                # - если не уложились в 2 с, но 200 КБ набрали за 5 с = всё равно ок
+                # - если и 200 КБ не набрали за 5 с = мёртвый/неюзабельный
+                if total < 50_000:
+                    if elapsed > 2.0 and not slow_start_detected:
+                        slow_start_detected = True
+                elif total < 200_000:
+                    if slow_start_detected and elapsed > 5.0:
+                        raise RuntimeError("slow_first_200kb")
+                # total >= 200_000 = старт прошёл, дальше speed-test сам решит
                 
                 now = time.perf_counter()
                 dt = now - window_start
@@ -66,7 +73,7 @@ async def _measure_one(
     except asyncio.TimeoutError:
         err = "timeout"
     except Exception as e:
-        err = type(e).__name__
+        err = str(e) or type(e).__name__
 
     if total < min_bytes or not peak_rates:
         return {"mbps": 0.0, "error": err or "too_slow", "bytes": total}

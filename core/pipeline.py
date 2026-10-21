@@ -24,6 +24,8 @@ from core.cache import (
     save_cache,
     update_after_run,
 )
+from core.cdn_filter import filter_fake_speeds
+from core.geoip import lookup_countries
 from core.service_check import get_service_concurrent, service_check_all
 from core.speed_test import get_speed_concurrent, speed_test_all
 from core.tcp_check import tcp_check_all
@@ -50,6 +52,8 @@ async def run_core_pipeline(
 
     proxies_all = await fetch_all(config["subscriptions"])
     logger.info(f"[1] После парсинга: {len(proxies_all)}")
+    ru_after_parse = sum(1 for p in proxies_all if p.get("_is_russian"))
+    logger.info(f"[1] РФ-серверов после парсинга: {ru_after_parse}")
 
     udp_types = set(config.get("udp_types", ["hysteria2"]))
 
@@ -81,6 +85,8 @@ async def run_core_pipeline(
 
     alive = tcp_alive + hy2_proxies
     logger.info(f"[2.5] Всего к service-check: {len(alive)}")
+    ru_alive = sum(1 for p in alive if p.get("_is_russian"))
+    logger.info(f"[2.5] РФ-серверов к service-check: {ru_alive}")
 
     st = config.get("speed_test", {})
     scfg = config.get("service_check", {})
@@ -113,6 +119,8 @@ async def run_core_pipeline(
 
     relevant = [p for p in checked if _has_any_service(p)]
     logger.info(f"[2.5] Прошли хотя бы один сервис: {len(relevant)} из {len(checked)}")
+    ru_after_service = sum(1 for p in relevant if p.get("_is_russian"))
+    logger.info(f"[2.5] РФ-серверов прошли service-check: {ru_after_service}")
 
     test_urls = st.get("test_urls")
     if not test_urls:
@@ -136,6 +144,17 @@ async def run_core_pipeline(
         min_bytes=min_bytes,
         peak_window_sec=peak_win,
     )
+
+    # Отсеиваем CDN-прокси с нереальными скоростями (CF-to-CF кэш).
+    speed_results = filter_fake_speeds(speed_results)
+
+    # Гео-детект по IP: нужен для профилей с exclude_geo, где имя
+    # не содержит гео-подсказок (напр. "Node 123" с IP в США).
+    # Если сервис недоступен — фильтр работает как раньше (только по именам).
+    await lookup_countries(speed_results)
+
+    ru_after_speed = sum(1 for p in speed_results if p.get("_is_russian"))
+    logger.info(f"[3] РФ-серверов после speed-test: {ru_after_speed}")
 
     if cache_enabled:
         cache_data = update_after_run(

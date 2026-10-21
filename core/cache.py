@@ -1,3 +1,4 @@
+import ipaddress
 import json
 import time
 from pathlib import Path
@@ -6,8 +7,25 @@ from typing import Any
 from loguru import logger
 
 
+SUBNET_BAN_THRESHOLD = 5
+
+
 def _server_key(proxy: dict[str, Any]) -> str:
     return f"{proxy.get('server')}:{proxy.get('port')}"
+
+
+def _ip_subnet(server: str) -> str | None:
+    """Возвращает /24 подсеть для IPv4, иначе None (домены не трогаем)."""
+    if not server:
+        return None
+    try:
+        ip = ipaddress.ip_address(server)
+    except ValueError:
+        return None
+    if ip.version != 4:
+        return None
+    parts = str(ip).split(".")
+    return ".".join(parts[:3]) + ".0/24"
 
 
 def load_cache(path: Path) -> dict[str, Any]:
@@ -40,22 +58,29 @@ def filter_banned(
     ban_duration_hours: float,
 ) -> list[dict[str, Any]]:
     now = time.time()
-    ban_seconds = ban_duration_hours * 3600
-    banned: list[str] = []
+    banned: set[str] = set()
     servers = cache.get("servers", {})
     for key, entry in servers.items():
-        banned_until = entry.get("banned_until", 0)
-        if banned_until > now:
-            banned.append(key)
-    if not banned:
-        return proxies
-    banned_set = set(banned)
-    before = len(proxies)
-    result = [p for p in proxies if _server_key(p) not in banned_set]
-    logger.info(
-        f"Cache: пропущено {before - len(result)} серверов из бана "
-        f"(активно {len(banned_set)} ключей)"
-    )
+        if entry.get("banned_until", 0) > now:
+            banned.add(key)
+
+    result: list[dict[str, Any]] = []
+    for p in proxies:
+        key = _server_key(p)
+        if key in banned:
+            continue
+        # Прокидываем историю из кэша для последующей сортировки
+        entry = servers.get(key)
+        if entry:
+            p["_success_streak"] = int(entry.get("success_streak", 0) or 0)
+            p["_avg_speed"] = float(entry.get("avg_speed", 0) or 0)
+        result.append(p)
+
+    if banned:
+        logger.info(
+            f"Cache: пропущено {len(proxies) - len(result)} серверов из бана "
+            f"(активно {len(banned)} ключей)"
+        )
     return result
 
 
@@ -77,6 +102,7 @@ def update_after_run(
             "fail_streak": 0,
             "success_streak": 0,
             "last_seen": now,
+            "avg_speed": 0.0,
         }
         entry["last_seen"] = now
 
@@ -84,6 +110,10 @@ def update_after_run(
             entry["fail_streak"] = 0
             entry["success_streak"] = int(entry.get("success_streak", 0)) + 1
             entry["banned_until"] = 0
+            # EMA по скорости: 30% от текущего замера, 70% — от истории.
+            # Так «однодневки» с одним удачным замером не всплывают наверх.
+            prev_avg = float(entry.get("avg_speed", 0) or 0)
+            entry["avg_speed"] = round(0.3 * speed + 0.7 * prev_avg, 2)
         else:
             entry["success_streak"] = 0
             entry["fail_streak"] = int(entry.get("fail_streak", 0)) + 1
@@ -93,5 +123,57 @@ def update_after_run(
                     f"Cache: забанил {key} на {ban_duration_hours:g} ч "
                     f"(streak={entry['fail_streak']})"
                 )
+
+        # Прокидываем историю в прокси для последующей сортировки
+        p["_success_streak"] = int(entry.get("success_streak", 0) or 0)
+        p["_avg_speed"] = float(entry.get("avg_speed", 0) or 0)
+
         servers[key] = entry
+
+    # Умный бан /24: если в одной подсети >= SUBNET_BAN_THRESHOLD
+    # серверов ушли в бан — баним всю подсеть. Это серверный даунтайм
+    # у провайдера, нет смысла на следующем прогоне тестировать соседей.
+    _ban_hot_subnets(servers, now, ban_duration_hours)
+
     return cache
+
+
+def _ban_hot_subnets(
+    servers: dict[str, Any],
+    now: float,
+    ban_duration_hours: float,
+) -> None:
+    """Банит «горячие» /24 подсети, где уже много забаненных серверов."""
+    subnet_banned: dict[str, int] = {}
+    for key, entry in servers.items():
+        if entry.get("banned_until", 0) <= now:
+            continue
+        ip = key.partition(":")[0]
+        subnet = _ip_subnet(ip)
+        if subnet:
+            subnet_banned[subnet] = subnet_banned.get(subnet, 0) + 1
+
+    hot_subnets = {
+        subnet
+        for subnet, count in subnet_banned.items()
+        if count >= SUBNET_BAN_THRESHOLD
+    }
+    if not hot_subnets:
+        return
+
+    ban_seconds = ban_duration_hours * 3600
+    banned_count = 0
+    for key, entry in servers.items():
+        if entry.get("banned_until", 0) > now:
+            continue  # уже забанен индивидуально
+        ip = key.partition(":")[0]
+        subnet = _ip_subnet(ip)
+        if subnet in hot_subnets:
+            entry["banned_until"] = now + ban_seconds
+            banned_count += 1
+
+    if banned_count:
+        logger.info(
+            f"Cache: умный бан подсетей — забанил ещё {banned_count} "
+            f"серверов из {len(hot_subnets)} «горячих» /24"
+        )
