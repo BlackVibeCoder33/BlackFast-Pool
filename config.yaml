@@ -111,6 +111,14 @@ thresholds_by_type:
   hysteria2:
     max_service_latency_ms: 2000
 
+# Сколько вариантов одного сервера с РАЗНЫМИ client-fingerprint
+# отдавать в подписку. 1 = только протестированный representative
+# (старое поведение). 3 = rep + до 2 «запасных» fp: если DPI забанит
+# один отпечаток, клиент переберёт остальные.
+# Тесты (TCP/service/speed) идут только по representative.
+dedupe:
+  max_fp_variants: 3
+
 anti_dpi:
   enabled: true
   fragment: true
