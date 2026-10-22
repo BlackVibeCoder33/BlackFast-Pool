@@ -8,6 +8,10 @@ from loguru import logger
 
 
 SUBNET_BAN_THRESHOLD = 5
+PERMANENT_BAN_STREAK = 10
+PERMANENT_BAN_HOURS = 168  # 7 дней
+SUBNET_EXTENDED_BAN_HOURS = 24
+SUBNET_STRIKE_DECAY_HOURS = 24
 
 
 def _server_key(proxy: dict[str, Any]) -> str:
@@ -117,7 +121,13 @@ def update_after_run(
         else:
             entry["success_streak"] = 0
             entry["fail_streak"] = int(entry.get("fail_streak", 0)) + 1
-            if entry["fail_streak"] >= ban_after:
+            if entry["fail_streak"] >= PERMANENT_BAN_STREAK:
+                entry["banned_until"] = now + PERMANENT_BAN_HOURS * 3600
+                logger.info(
+                    f"Cache: ПЕРМАНЕНТНЫЙ бан {key} на "
+                    f"{PERMANENT_BAN_HOURS} ч (streak={entry['fail_streak']})"
+                )
+            elif entry["fail_streak"] >= ban_after:
                 entry["banned_until"] = now + ban_duration_hours * 3600
                 logger.info(
                     f"Cache: забанил {key} на {ban_duration_hours:g} ч "
@@ -133,17 +143,25 @@ def update_after_run(
     # Умный бан /24: если в одной подсети >= SUBNET_BAN_THRESHOLD
     # серверов ушли в бан — баним всю подсеть. Это серверный даунтайм
     # у провайдера, нет смысла на следующем прогоне тестировать соседей.
-    _ban_hot_subnets(servers, now, ban_duration_hours)
+    subnets_db = cache.setdefault("subnets", {})
+    _ban_hot_subnets(servers, subnets_db, now, ban_duration_hours)
 
     return cache
 
 
 def _ban_hot_subnets(
     servers: dict[str, Any],
+    subnets_db: dict[str, Any],
     now: float,
     ban_duration_hours: float,
 ) -> None:
-    """Банит «горячие» /24 подсети, где уже много забаненных серверов."""
+    """Банит «горячие» /24 подсети, где уже много забаненных серверов.
+
+    Если одна и та же /24 попадает в бан повторно (в пределах
+    SUBNET_STRIKE_DECAY_HOURS), срок бана расширяется до
+    SUBNET_EXTENDED_BAN_HOURS (24 ч). Логика: единичный даунтайм
+    провайдера — случайность, повторный — системная проблема.
+    """
     subnet_banned: dict[str, int] = {}
     for key, entry in servers.items():
         if entry.get("banned_until", 0) <= now:
@@ -161,19 +179,37 @@ def _ban_hot_subnets(
     if not hot_subnets:
         return
 
-    ban_seconds = ban_duration_hours * 3600
-    banned_count = 0
-    for key, entry in servers.items():
-        if entry.get("banned_until", 0) > now:
-            continue  # уже забанен индивидуально
-        ip = key.partition(":")[0]
-        subnet = _ip_subnet(ip)
-        if subnet in hot_subnets:
-            entry["banned_until"] = now + ban_seconds
-            banned_count += 1
+    extended_count = 0
+    normal_count = 0
+    for subnet in hot_subnets:
+        s = subnets_db.get(subnet) or {"strikes": 0, "last_hot_at": 0}
+        if now - s["last_hot_at"] > SUBNET_STRIKE_DECAY_HOURS * 3600:
+            s["strikes"] = 0
+        s["strikes"] += 1
+        s["last_hot_at"] = now
+        subnets_db[subnet] = s
 
-    if banned_count:
+        hours = (
+            SUBNET_EXTENDED_BAN_HOURS
+            if s["strikes"] >= 2
+            else ban_duration_hours
+        )
+        ban_seconds = hours * 3600
+        for key, entry in servers.items():
+            if entry.get("banned_until", 0) > now:
+                continue
+            ip = key.partition(":")[0]
+            if _ip_subnet(ip) == subnet:
+                entry["banned_until"] = now + ban_seconds
+                if hours == SUBNET_EXTENDED_BAN_HOURS:
+                    extended_count += 1
+                else:
+                    normal_count += 1
+
+    if normal_count or extended_count:
         logger.info(
-            f"Cache: умный бан подсетей — забанил ещё {banned_count} "
-            f"серверов из {len(hot_subnets)} «горячих» /24"
+            f"Cache: умный бан подсетей — забанил {normal_count} "
+            f"на {ban_duration_hours:g} ч, {extended_count} на "
+            f"{SUBNET_EXTENDED_BAN_HOURS} ч из {len(hot_subnets)} "
+            f"«горячих» /24"
         )
