@@ -126,8 +126,6 @@ def build_subscription(
 
     rules = list(BASE_RULES)
     
-    # Если профиль требует блокировки США/Канады (для Ютуба, Инсты и т.д.)
-    # Мы добавляем GEOIP-правила прямо в Karing. Он сам выкинет их при маршрутизации.
     if block_us_ca:
         rules.extend([
             "GEOIP,US,REJECT",

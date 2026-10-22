@@ -94,7 +94,6 @@ async def run_core_pipeline(
     spd_concurrent = get_speed_concurrent(config, is_github)
 
     cache_cfg = config.get("cache", {}) or {}
-    # В GHA теперь тоже используем кэш (через actions/cache)
     cache_enabled = bool(cache_cfg.get("enabled", False))
     cache_path = base_dir() / cache_cfg.get("cache_file", "out/cache.json")
     cache_data = load_cache(cache_path) if cache_enabled else {"servers": {}}
