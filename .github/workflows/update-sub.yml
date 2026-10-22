@@ -9,6 +9,8 @@ jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -82,3 +84,20 @@ jobs:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
           GIST_ID: ${{ secrets.GIST_ID }}
         run: python scripts/update_gist.py
+
+      - name: Publish pipeline logs
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ ! -d logs ] || [ -z "$(ls -A logs 2>/dev/null)" ]; then
+            echo "No logs to publish"
+            exit 0
+          fi
+          git add logs/
+          if git diff --cached --quiet; then
+            echo "No log changes to commit"
+            exit 0
+          fi
+          git commit -m "chore: update pipeline logs [skip ci]"
+          git push
