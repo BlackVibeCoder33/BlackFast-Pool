@@ -199,8 +199,19 @@ def ensure_unique_names(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
             seen[base] = 0
             p["name"] = base
             continue
+
+        # Коллизия: сначала пробуем [server:port]. Если это тоже
+        # коллизия (тот же сервер с разными client-fingerprint) —
+        # добавляем fp в суффикс, чтобы имена гарантированно различались.
         seen[base] += 1
-        p["name"] = f"{base} [{p.get('server')}:{p.get('port')}]"
+        candidate = f"{base} [{p.get('server')}:{p.get('port')}]"
+        if candidate not in seen:
+            seen[candidate] = 0
+            p["name"] = candidate
+            continue
+        seen[candidate] += 1
+        fp = str(p.get("client-fingerprint") or "default")
+        p["name"] = f"{candidate} [{fp}]"
     return proxies
 
 

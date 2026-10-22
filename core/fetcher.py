@@ -299,14 +299,14 @@ def _is_russian_proxy(proxy: dict[str, Any]) -> bool:
 def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     Глобальная дедупликация.
-    Сравнивает сервера по: Тип + Сервер + Порт + UUID/Пароль + Шифр (для SS).
-    Игнорирует имя, чтобы один и тот же сервер из 10 источников не тестировался 10 раз.
+    Сравнивает сервера по: Тип + Сервер + Порт + UUID/Пароль + Шифр +
+    client-fingerprint. Одинаковый сервер с РАЗНЫМИ отпечатками uTLS —
+    это НЕ дубликат, а альтернативный «ключ» к тому же серверу:
+    если DPI забанит один отпечаток, клиент переберёт другой.
 
-    Гео-подсказки из дублей переносятся на выжившего:
+    Гео-подсказки и РФ-флаг из дублей переносятся на выжившего:
     - `_is_russian` ставится, если хотя бы один дубль был русским;
-    - `_all_names` собирает имена ВСЕХ дублей — geo-фильтр проверяет их все,
-      чтобы «скрытый американец» не просочился из-за того, что выживший дубль
-      носил нейтральное имя вроде «Node 123».
+    - `_all_names` собирает имена ВСЕХ дублей — geo-фильтр проверяет их все.
     """
     by_key: dict[str, dict[str, Any]] = {}
     dupes = 0
@@ -316,8 +316,9 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
         ptype = str(p.get("type", ""))
         auth = str(p.get("uuid") or p.get("password") or "")
         cipher = str(p.get("cipher", ""))
+        fp = str(p.get("client-fingerprint") or "")
 
-        key = f"{ptype}:{server}:{port}:{auth}:{cipher}"
+        key = f"{ptype}:{server}:{port}:{auth}:{cipher}:{fp}"
         name = str(p.get("name") or "").strip()
 
         if key in by_key:
@@ -398,9 +399,60 @@ def group_by_server_port(
 def expand_representatives(
     representatives: list[dict[str, Any]],
     expansion_map: dict[tuple, list[dict[str, Any]]],
+    max_fp_variants: int = 3,
 ) -> list[dict[str, Any]]:
-    """Возвращает по одному протестированному конфигу на каждый сервер."""
+    """Возвращает протестированный representative + до (max_fp_variants-1)
+    альтернативных вариантов того же сервера с другими client-fingerprint.
+
+    Логика: сервер протестирован один раз (по representative), но если
+    у него есть другие fp — добавляем их как «запасные ключи». При блокировке
+    одного отпечатка DPI клиент переберёт остальные. Тесты доступности
+    (TCP/service/speed) от fp зависят слабо, поэтому не тестируем каждый
+    вариант отдельно — это утроило бы время пайплайна без ощутимой пользы.
+
+    - max_fp_variants=1 → старое поведение (только representative).
+    - max_fp_variants=3 → rep + до 2 альтернативных fp.
+    """
+    if max_fp_variants <= 1:
+        return list(representatives)
+
     expanded: list[dict[str, Any]] = []
     for rep in representatives:
         expanded.append(rep)
+        key = (rep.get("server"), rep.get("port"))
+        group = expansion_map.get(key) or []
+        if len(group) <= 1:
+            continue
+
+        rep_fp = str(rep.get("client-fingerprint") or "")
+        added = 0
+        for alt in group:
+            if added >= max_fp_variants - 1:
+                break
+            if alt is rep:
+                continue
+            alt_fp = str(alt.get("client-fingerprint") or "")
+            if alt_fp == rep_fp:
+                continue
+            # Копируем результат тестов representative на альтернативу —
+            # клиент будет использовать тот же сервер, отличаются только
+            # параметры uTLS в ClientHello.
+            clone = dict(alt)
+            clone["_tcp_ok"] = rep.get("_tcp_ok")
+            clone["_tcp_ping_ms"] = rep.get("_tcp_ping_ms")
+            clone["_services"] = rep.get("_services")
+            clone["_speed_mbps"] = rep.get("_speed_mbps")
+            clone["_speed_error"] = rep.get("_speed_error")
+            clone["_downloaded_bytes"] = rep.get("_downloaded_bytes")
+            clone["_country_code"] = rep.get("_country_code")
+            clone["_is_russian"] = rep.get("_is_russian")
+            clone["_all_names"] = list(rep.get("_all_names") or [])
+            clone["_success_streak"] = rep.get("_success_streak", 0)
+            clone["_avg_speed"] = rep.get("_avg_speed", 0.0)
+            clone["_alt_fp_of"] = (
+                f"{rep.get('server')}:{rep.get('port')}"
+            )
+            expanded.append(clone)
+            added += 1
+
     return expanded

@@ -184,7 +184,12 @@ async def run_core_pipeline(
             
             selected_tcp = [p for p in selected if not p.get("_tcp_skip")]
             selected_hy2 = [p for p in selected if p.get("_tcp_skip")]
-            expanded_tcp = expand_representatives(selected_tcp, tcp_map)
+            max_fp_variants = int(
+                config.get("dedupe", {}).get("max_fp_variants", 3)
+            )
+            expanded_tcp = expand_representatives(
+                selected_tcp, tcp_map, max_fp_variants=max_fp_variants
+            )
             base_list = list(expanded_tcp) + list(selected_hy2)
             
             final_list = sort_by_speed(ensure_unique_names(base_list))
