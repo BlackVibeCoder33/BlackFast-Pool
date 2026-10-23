@@ -15,14 +15,8 @@ subscriptions:
     enabled: true
 
   # --- KIZYAK ---
-  - name: "kizyak-beta6BL"
-    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta6BL.txt"
-    enabled: true
   - name: "kizyak-beta7"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta7.txt"
-    enabled: true
-  - name: "kizyak-beta8-txt"
-    url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta8.txt"
     enabled: true
 
   # --- HIZTIN ---
@@ -83,19 +77,13 @@ subscriptions:
   - name: "wlunlocker-blacklist"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
     enabled: true
-  - name: "wlunlocker-vpn1"
-    url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_vpn1.txt"
-    enabled: true
   - name: "wlunlocker-vpn2"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_vpn2.txt"
     enabled: true
 
-  # --- NEW: AetrisVPN, ChaiVPN, Roosterkid, Kamaji, V2RayCFGDumper, V2RayRoot ---
+  # --- AETRISVPN / ROOSTERKID / KAMAJI / V2RAYROOT ---
   - name: "aetrisvpn-blacklist"
     url: "https://raw.githubusercontent.com/flaafix/AetrisVPN-black-list/refs/heads/main/configs.txt"
-    enabled: true
-  - name: "chaivpn-black"
-    url: "https://raw.githubusercontent.com/OlenniyPenis/ChaiVPN/refs/heads/main/sub-black.txt"
     enabled: true
   - name: "roosterkid-v2ray"
     url: "https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/V2RAY_RAW.txt"
@@ -103,34 +91,8 @@ subscriptions:
   - name: "shabane-kamaji"
     url: "https://raw.githubusercontent.com/shabane/kamaji/master/hub/self/tested/merged.txt"
     enabled: true
-  - name: "v2raycfg-dumper"
-    url: "https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/refs/heads/main/sub.txt"
-    enabled: true
   - name: "v2rayroot-ss"
     url: "https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/shadowsocks.txt"
-    enabled: true
-  - name: "v2rayroot-vmess"
-    url: "https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/vmess.txt"
-    enabled: true
-
-  # --- NEW: nikita29a (средние зеркала, БЕЗ mirror-02 и mirror-20) ---
-  - name: "nikita29a-mirror-03"
-    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/3.txt"
-    enabled: true
-  - name: "nikita29a-mirror-05"
-    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/5.txt"
-    enabled: true
-  - name: "nikita29a-mirror-14"
-    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/14.txt"
-    enabled: true
-  - name: "nikita29a-mirror-18"
-    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/18.txt"
-    enabled: true
-  - name: "nikita29a-mirror-19"
-    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/19.txt"
-    enabled: true
-  - name: "nikita29a-mirror-23"
-    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/23.txt"
     enabled: true
 
 thresholds:
