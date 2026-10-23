@@ -54,16 +54,30 @@ def filter_fake_speeds(
     `dl.google.com` легко выдаёт 800–1200 Mbps.
     """
     result: list[dict[str, Any]] = []
-    removed = 0
+    removed_cf = 0
+    removed_domain = 0
     for p in proxies:
         speed = float(p.get("_speed_mbps", 0) or 0)
-        if speed > max_plausible_mbps and _is_cdn_ip(str(p.get("server") or "")):
-            removed += 1
+        if speed <= max_plausible_mbps:
+            result.append(p)
             continue
-        result.append(p)
-    if removed:
+        server = str(p.get("server") or "")
+        if _is_cdn_ip(server):
+            removed_cf += 1
+            continue
+        # Доменное имя + нереальная скорость — почти всегда CF-кэш
+        try:
+            ipaddress.ip_address(server)
+            # Настоящий IP, не CF, но >500 Mbps — оставляем (может быть
+            # реальный быстрый сервер с платным каналом)
+            result.append(p)
+        except ValueError:
+            # Это домен + >500 Mbps — фильтруем как suspect
+            removed_domain += 1
+            continue
+    if removed_cf or removed_domain:
         logger.info(
-            f"CDN-фильтр: убрано {removed} серверов "
-            f"(CloudFlare-IP + >{max_plausible_mbps:g} Mbps)"
+            f"CDN-фильтр: убрано {removed_cf + removed_domain} серверов "
+            f"(CF-IP: {removed_cf}, домены с >{max_plausible_mbps:g} Mbps: {removed_domain})"
         )
     return result
