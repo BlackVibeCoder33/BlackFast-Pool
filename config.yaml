@@ -333,8 +333,9 @@ speed_test:
   concurrent_pc: 6
   concurrent_github: 8
   test_urls:
-    # Google CDN (dl.google.com) — ближе всего к серверам YouTube
-    - "https://dl.google.com/dl/android/studio/install/3.5.2.0/android-studio-ide-191.5977832-windows.exe"
+    # Официальный Android SDK-архив Google, ~60 МБ. Стабилен для CI-тестов.
+    - "https://dl.google.com/android/repository/platform-27_r03.zip"
+    # Cloudflare speed-test как fallback
     - "https://speed.cloudflare.com/__down?bytes=10000000"
   timeout_seconds: 40
   retest_count: 2
