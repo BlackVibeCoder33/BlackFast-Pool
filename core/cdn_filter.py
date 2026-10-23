@@ -54,30 +54,36 @@ def filter_fake_speeds(
     `dl.google.com` легко выдаёт 800–1200 Mbps.
     """
     result: list[dict[str, Any]] = []
-    removed_cf = 0
-    removed_domain = 0
+    removed_cf_ip = 0
+    removed_cf_domain = 0
     for p in proxies:
         speed = float(p.get("_speed_mbps", 0) or 0)
         if speed <= max_plausible_mbps:
             result.append(p)
             continue
+
         server = str(p.get("server") or "")
         if _is_cdn_ip(server):
-            removed_cf += 1
+            removed_cf_ip += 1
             continue
-        # Доменное имя + нереальная скорость — почти всегда CF-кэш
+
+        # Проверяем: сервер — это IP или домен?
+        # Если IP — оставляем (>500 Mbps на реальном IP возможны, это VPS с платным каналом).
+        # Если домен — почти всегда CF-кэш, отсеиваем как suspect.
         try:
             ipaddress.ip_address(server)
-            # Настоящий IP, не CF, но >500 Mbps — оставляем (может быть
-            # реальный быстрый сервер с платным каналом)
+            # Настоящий IP, не в CF-диапазоне, но > max_plausible_mbps.
+            # Оставляем: может быть реальный быстрый сервер.
             result.append(p)
         except ValueError:
-            # Это домен + >500 Mbps — фильтруем как suspect
-            removed_domain += 1
+            # Домен + нереальная скорость = CF-кэш `dl.google.com` через CF-прокси.
+            removed_cf_domain += 1
             continue
-    if removed_cf or removed_domain:
+
+    if removed_cf_ip or removed_cf_domain:
         logger.info(
-            f"CDN-фильтр: убрано {removed_cf + removed_domain} серверов "
-            f"(CF-IP: {removed_cf}, домены с >{max_plausible_mbps:g} Mbps: {removed_domain})"
+            f"CDN-фильтр: убрано {removed_cf_ip + removed_cf_domain} серверов "
+            f"(CF-IP: {removed_cf_ip}, домены с >{max_plausible_mbps:g} Mbps: "
+            f"{removed_cf_domain})"
         )
     return result

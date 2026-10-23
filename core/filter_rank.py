@@ -196,6 +196,26 @@ def build_profiles(
             f"{' +РФ' if allow_russian else ''}: "
             f"{len(selected)} серверов [{source_str}]{excluded_str}"
         )
+
+    # Источники, не давшие ни одного сервера ни в один профиль — мусорные.
+    # Полезно для чистки config.yaml после расширения пула.
+    all_sources: set[str] = set()
+    for p in proxies:
+        s = p.get("_source")
+        if s:
+            all_sources.add(s)
+    used_sources: set[str] = set()
+    for selected in result.values():
+        for p in selected:
+            s = p.get("_source")
+            if s:
+                used_sources.add(s)
+    dead_sources = sorted(all_sources - used_sources)
+    if dead_sources:
+        logger.warning(
+            f"[sources] мертвые источники (0 серверов ни в один профиль): "
+            f"{', '.join(dead_sources)}"
+        )
     return result
 
 
