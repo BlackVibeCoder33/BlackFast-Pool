@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -90,14 +92,34 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
           if [ ! -d logs ] || [ -z "$(ls -A logs 2>/dev/null)" ]; then
             echo "No logs to publish"
             exit 0
           fi
+
           git add logs/
           if git diff --cached --quiet; then
             echo "No log changes to commit"
             exit 0
           fi
           git commit -m "chore: update pipeline logs [skip ci]"
-          git push
+
+          # Если между checkout и push кто-то успел запушить в main
+          # (ручной коммит через веб-UI, параллельный запуск workflow),
+          # remote main ушёл вперёд. Подтягиваем и пере-appl'им свой коммит.
+          # В GHA это безопасно: локально только автоматический коммит логов.
+          # Максимум 5 попыток — если конфликт persistent, падаем явно.
+          for attempt in 1 2 3 4 5; do
+            if git push; then
+              echo "Push OK (attempt $attempt)"
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt/5), rebasing on origin/main..."
+            git fetch origin main
+            git rebase origin/main
+            sleep 2
+          done
+
+          echo "ERROR: не удалось запушить после 5 попыток"
+          exit 1
