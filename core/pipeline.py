@@ -118,6 +118,9 @@ async def run_core_pipeline(
 
     relevant = [p for p in checked if _has_any_service(p)]
     logger.info(f"[2.5] Прошли хотя бы один сервис: {len(relevant)} из {len(checked)}")
+    hy2_checked = sum(1 for p in checked if p.get("type") in udp_types)
+    hy2_relevant = sum(1 for p in relevant if p.get("type") in udp_types)
+    logger.info(f"[2.5] hy2 прошли service-check: {hy2_relevant} из {hy2_checked}")
     ru_after_service = sum(1 for p in relevant if p.get("_is_russian"))
     logger.info(f"[2.5] РФ-серверов прошли service-check: {ru_after_service}")
 

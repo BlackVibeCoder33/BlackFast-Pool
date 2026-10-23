@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 from loguru import logger
@@ -5,7 +6,9 @@ from loguru import logger
 
 _JUNK_NAME_WORDS = {
     "channel", "free", "all", "server", "vpn", "node",
-    "config", "unlimited", "join", "telegram",
+    "config", "unlimited", "join", "telegram", "proxy",
+    "keys", "net", "network", "direct", "fast", "new",
+    "premium", "upgrade", "best", "top", "super", "our",
 }
 
 
@@ -20,9 +23,29 @@ def _is_junk_name(name: str) -> bool:
     n = name.strip()
     if not n:
         return True
+    # Совсем короткое без букв (?, !, →)
     if len(n) < 4 and not any(c.isalpha() for c in n):
         return True
-    if n.lower() in _JUNK_NAME_WORDS:
+    # Нет ни латинских/кириллических букв, ни цифр — только эмодзи/спецсимволы
+    if not re.search(r"[a-zA-Zа-яА-ЯёЁ0-9]", n):
+        return True
+    # Телеграм-хендлы, ссылки, каналы
+    if "@" in n or "t.me" in n.lower() or "telegram" in n.lower():
+        return True
+    # Все значимые слова имени — мусорные ("Channel", "All", "OurChannel")
+    words = re.findall(r"[a-zA-Zа-яА-ЯёЁ]+", n.lower())
+    if words and all(w in _JUNK_NAME_WORDS for w in words):
+        return True
+    # Одно латинское/кириллическое слово без разделителей — бренд канала,
+    # а не адрес сервера: "EPODONIOS", "surfboardv2ray", "OurChannel"
+    if (
+        len(words) == 1
+        and not re.search(r"[.:/_\- ]", n)
+        and len(words[0]) >= 5
+    ):
+        return True
+    # Бренд с подчёркиванием и мусорным словом: "Alfred_Config", "Capital_NET"
+    if "_" in n and any(w in _JUNK_NAME_WORDS for w in words):
         return True
     return False
 
