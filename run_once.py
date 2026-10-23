@@ -56,8 +56,8 @@ async def run(config: dict) -> None:
         if path in result.yaml_subscriptions:
             (out_dir / filename).write_text(result.yaml_subscriptions[path], encoding="utf-8")
 
-        # Сохраняем base64 TXT для Hiddify
-        if path in result.hiddify_subscriptions:
+        # Сохраняем base64 TXT для Hiddify — только если не karing_only
+        if not profile.get("karing_only", False) and path in result.hiddify_subscriptions:
             (out_dir / hiddify_filename).write_text(result.hiddify_subscriptions[path], encoding="utf-8")
 
     # Сохраняем статистику воронки

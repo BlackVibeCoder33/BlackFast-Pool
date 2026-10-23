@@ -439,6 +439,114 @@ subscription_profiles:
       - instagram
       - chatgpt
     min_speed_mbps: 50
+  - name: "BlackFast TG+FlashScore HS"
+    path: "tg-flashscore-hs"
+    filename: "Global-BlackFast-TG-FlashScore-HS.yaml"
+    group_prefix: "BlackFast TG+FlashScore HS"
+    required_services:
+      - telegram
+      - flashscore
+    min_speed_mbps: 50
+    karing_only: true
+    exclude_geo:
+      - "US"
+      - "USA"
+      - "United States"
+      - "America"
+      - "Canada"
+      - "CA"
+      - "🇺🇸"
+      - "🇨🇦"
+      - "New York"
+      - "Los Angeles"
+      - "Miami"
+      - "Seattle"
+      - "Silicon Valley"
+      - "Chicago"
+      - "Dallas"
+      - "Atlanta"
+      - "Phoenix"
+      - "San Francisco"
+      - "Houston"
+      - "Washington"
+      - "Toronto"
+      - "Montreal"
+      - "Vancouver"
+    exclude_name_contains:
+      - "deep-links.com"
+      - "fastervpn"
+  - name: "BlackFast TG+FlashScore"
+    path: "tg-flashscore"
+    filename: "Global-BlackFast-TG-FlashScore.yaml"
+    group_prefix: "BlackFast TG+FlashScore"
+    required_services:
+      - telegram
+      - flashscore
+    min_speed_mbps: 15
+    karing_only: true
+    exclude_geo:
+      - "US"
+      - "USA"
+      - "United States"
+      - "America"
+      - "Canada"
+      - "CA"
+      - "🇺🇸"
+      - "🇨🇦"
+      - "New York"
+      - "Los Angeles"
+      - "Miami"
+      - "Seattle"
+      - "Silicon Valley"
+      - "Chicago"
+      - "Dallas"
+      - "Atlanta"
+      - "Phoenix"
+      - "San Francisco"
+      - "Houston"
+      - "Washington"
+      - "Toronto"
+      - "Montreal"
+      - "Vancouver"
+    exclude_name_contains:
+      - "deep-links.com"
+      - "fastervpn"
+  - name: "BlackFast TG+FlashScore LS"
+    path: "tg-flashscore-ls"
+    filename: "Global-BlackFast-TG-FlashScore-LS.yaml"
+    group_prefix: "BlackFast TG+FlashScore LS"
+    required_services:
+      - telegram
+      - flashscore
+    min_speed_mbps: 1
+    karing_only: true
+    exclude_geo:
+      - "US"
+      - "USA"
+      - "United States"
+      - "America"
+      - "Canada"
+      - "CA"
+      - "🇺🇸"
+      - "🇨🇦"
+      - "New York"
+      - "Los Angeles"
+      - "Miami"
+      - "Seattle"
+      - "Silicon Valley"
+      - "Chicago"
+      - "Dallas"
+      - "Atlanta"
+      - "Phoenix"
+      - "San Francisco"
+      - "Houston"
+      - "Washington"
+      - "Toronto"
+      - "Montreal"
+      - "Vancouver"
+    exclude_name_contains:
+      - "deep-links.com"
+      - "fastervpn"
 
 # Типы, которые не проверяются TCP-чеком (UDP/QUIC-протоколы).
 udp_types:
