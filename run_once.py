@@ -13,7 +13,7 @@ from core.pipeline import run_core_pipeline
 from core.singbox import set_anti_dpi
 
 
-PIPELINE_LOGS_KEEP = 3
+PIPELINE_LOGS_KEEP = 10
 
 
 def _setup_pipeline_logging() -> Path:
