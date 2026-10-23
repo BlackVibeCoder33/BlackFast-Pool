@@ -10,20 +10,8 @@ subscriptions:
   - name: "igareck-SS-All"
     url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_SS%2BAll_RUS_clash_rudirect.yaml"
     enabled: true
-  - name: "igareck-VLESS-mobile-txt"
-    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_VLESS_RUS_mobile.txt"
-    enabled: true
-  - name: "igareck-SS-All-txt"
-    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/BLACK_SS%2BAll_RUS.txt"
-    enabled: true
-  - name: "igareck-bitbucket-mobile"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/Vless-Reality-White-Lists-Rus-Mobile.txt"
-    enabled: true
   - name: "igareck-bitbucket-cidr-all"
     url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-CIDR-RU-all.txt"
-    enabled: true
-  - name: "igareck-bitbucket-cidr-checked"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-CIDR-RU-checked.txt"
     enabled: true
 
   # --- KIZYAK ---
@@ -37,7 +25,7 @@ subscriptions:
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta8.txt"
     enabled: true
 
-  # --- HIZTIN (только те, что дали результат) ---
+  # --- HIZTIN ---
   - name: "hiztin-1"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/1.txt"
     enabled: true
@@ -55,9 +43,6 @@ subscriptions:
     enabled: true
   - name: "hiztin-7"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/7.txt"
-    enabled: true
-  - name: "hiztin-10"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/10.txt"
     enabled: true
   - name: "hiztin-11"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/11.txt"
@@ -97,6 +82,55 @@ subscriptions:
   # --- WLUNLOCKER ---
   - name: "wlunlocker-blacklist"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
+    enabled: true
+  - name: "wlunlocker-vpn1"
+    url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_vpn1.txt"
+    enabled: true
+  - name: "wlunlocker-vpn2"
+    url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_vpn2.txt"
+    enabled: true
+
+  # --- NEW: AetrisVPN, ChaiVPN, Roosterkid, Kamaji, V2RayCFGDumper, V2RayRoot ---
+  - name: "aetrisvpn-blacklist"
+    url: "https://raw.githubusercontent.com/flaafix/AetrisVPN-black-list/refs/heads/main/configs.txt"
+    enabled: true
+  - name: "chaivpn-black"
+    url: "https://raw.githubusercontent.com/OlenniyPenis/ChaiVPN/refs/heads/main/sub-black.txt"
+    enabled: true
+  - name: "roosterkid-v2ray"
+    url: "https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/V2RAY_RAW.txt"
+    enabled: true
+  - name: "shabane-kamaji"
+    url: "https://raw.githubusercontent.com/shabane/kamaji/master/hub/self/tested/merged.txt"
+    enabled: true
+  - name: "v2raycfg-dumper"
+    url: "https://raw.githubusercontent.com/miladtahanian/V2RayCFGDumper/refs/heads/main/sub.txt"
+    enabled: true
+  - name: "v2rayroot-ss"
+    url: "https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/shadowsocks.txt"
+    enabled: true
+  - name: "v2rayroot-vmess"
+    url: "https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/vmess.txt"
+    enabled: true
+
+  # --- NEW: nikita29a (средние зеркала, БЕЗ mirror-02 и mirror-20) ---
+  - name: "nikita29a-mirror-03"
+    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/3.txt"
+    enabled: true
+  - name: "nikita29a-mirror-05"
+    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/5.txt"
+    enabled: true
+  - name: "nikita29a-mirror-14"
+    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/14.txt"
+    enabled: true
+  - name: "nikita29a-mirror-18"
+    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/18.txt"
+    enabled: true
+  - name: "nikita29a-mirror-19"
+    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/19.txt"
+    enabled: true
+  - name: "nikita29a-mirror-23"
+    url: "https://github.com/nikita29a/FreeProxyList/raw/refs/heads/main/mirror/23.txt"
     enabled: true
 
 thresholds:
