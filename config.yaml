@@ -292,10 +292,6 @@ udp_types:
   - hysteria2
 
 services:
-  ya_ru:
-    url: "https://ya.ru/"
-    expect_status: 200
-    timeout_seconds: 7
   youtube:
     url: "https://www.youtube.com/generate_204"
     expect_status: 204
