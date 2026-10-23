@@ -211,10 +211,15 @@ async def run_core_pipeline(
             )
             result.counts[path] = len(final_list)
 
-            hiddify_b64 = build_hiddify_subscription(final_list)
-            if hiddify_b64:
-                result.hiddify_subscriptions[path] = hiddify_b64
-                logger.info(f"[hiddify] '{path}': {len(final_list)} записей")
+            # karing_only: Hiddify-подписку для этого профиля не собираем
+            karing_only = bool(profile.get("karing_only", False))
+            if karing_only:
+                logger.info(f"[hiddify] '{path}': пропущено (karing_only)")
+            else:
+                hiddify_b64 = build_hiddify_subscription(final_list)
+                if hiddify_b64:
+                    result.hiddify_subscriptions[path] = hiddify_b64
+                    logger.info(f"[hiddify] '{path}': {len(final_list)} записей")
 
             logger.info(f"[profiles] '{path}': {len(final_list)} записей (уникальных {len(selected)})")
 
