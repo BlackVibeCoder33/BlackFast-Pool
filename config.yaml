@@ -3,17 +3,6 @@
 # ============================================================
 
 subscriptions:
-  # --- IGARECK ---
-  - name: "igareck-VLESS-mobile"
-    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_VLESS_RUS_mobile_clash_rudirect.yaml"
-    enabled: true
-  - name: "igareck-SS-All"
-    url: "https://raw.githack.com/igareck/vpn-configs-for-russia/main/Export/Clash/RU_DIRECT/BLACK_SS%2BAll_RUS_clash_rudirect.yaml"
-    enabled: true
-  - name: "igareck-bitbucket-cidr-all"
-    url: "https://bitbucket.org/igareck/vpn-configs-for-russia/raw/main/WHITE-CIDR-RU-all.txt"
-    enabled: true
-
   # --- KIZYAK ---
   - name: "kizyak-beta7"
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta7.txt"
@@ -70,8 +59,7 @@ subscriptions:
 thresholds:
   max_ping_ms: 400
   min_speed_mbps: 3
-  # Максимальная задержка до сервиса (мс). Подняли с 2000 до 2500:
-  # excluded_by_latency вырос с 8 до 18 за прогон, режем «ещё живые» серверы.
+  # Максимальная задержка до сервиса (мс).
   max_service_latency_ms: 2500
 
 # Переопределение порогов для конкретных типов прокси.
@@ -80,10 +68,10 @@ thresholds_by_type:
     max_service_latency_ms: 2000
 
 # Сколько вариантов одного сервера с РАЗНЫМИ client-fingerprint
-# отдавать в подписку. 1 = только протестированный representative
-# (старое поведение). 3 = rep + до 2 «запасных» fp: если DPI забанит
-# один отпечаток, клиент переберёт остальные.
-# Тесты (TCP/service/speed) идут только по representative.
+# отдавать в подписку. 1 = только representative. 3 = representative
+# + до 2 «запасных» fp: если один отпечаток заблокирован,
+# клиент переберёт остальные. Тесты (TCP/service/speed) идут
+# только по representative.
 dedupe:
   max_fp_variants: 3
 
