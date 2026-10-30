@@ -115,7 +115,7 @@ def update_after_run(
             entry["success_streak"] = int(entry.get("success_streak", 0)) + 1
             entry["banned_until"] = 0
             # EMA по скорости: 30% от текущего замера, 70% — от истории.
-            # Так «однодневки» с одним удачным замером не всплывают наверх.
+            # Так серверы с единичным удачным замером не всплывают наверх.
             prev_avg = float(entry.get("avg_speed", 0) or 0)
             entry["avg_speed"] = round(0.3 * speed + 0.7 * prev_avg, 2)
         else:

@@ -99,11 +99,17 @@ async def run_core_pipeline(
     cache_data = load_cache(cache_path) if cache_enabled else {"servers": {}}
 
     if cache_enabled:
+        logger.info(
+            f"[cache] path={cache_path.resolve()} "
+            f"servers={len(cache_data.get('servers', {}))}"
+        )
+        alive_before = len(alive)
         alive = filter_banned(
             alive,
             cache_data,
             float(cache_cfg.get("ban_duration_hours", 2)),
         )
+        logger.info(f"[cache] alive: {alive_before} → {len(alive)}")
 
     checked = await service_check_all(
         alive,
@@ -155,8 +161,56 @@ async def run_core_pipeline(
     # Если сервис недоступен — фильтр работает как раньше (только по именам).
     await lookup_countries(speed_results)
 
+    geo_filled = sum(1 for p in speed_results if p.get("_country_code"))
+    if speed_results and geo_filled == 0:
+        logger.warning(
+            f"[geoip] FAIL: ни один из {len(speed_results)} серверов "
+            f"не получил страну. Проверь ip-api.com доступность "
+            f"(возможно блокируется провайдером)."
+        )
+    elif speed_results and geo_filled < len(speed_results) * 0.5:
+        logger.warning(
+            f"[geoip] PARTIAL: {geo_filled}/{len(speed_results)} серверов "
+            f"получили страну (<50%)."
+        )
+
     ru_after_speed = sum(1 for p in speed_results if p.get("_is_russian"))
     logger.info(f"[3] РФ-серверов после speed-test: {ru_after_speed}")
+
+    # Диагностика распределений после speed-test (читается в анализ-скрипте).
+    # В логике фильтрации не используется, только логируется.
+    if speed_results:
+        from collections import Counter as _Counter
+
+        proto_stats = _Counter(str(p.get("type") or "?") for p in speed_results)
+        country_stats = _Counter(
+            (str(p.get("_country_code") or "??")).upper() for p in speed_results
+        )
+        src_stats = _Counter(str(p.get("_source") or "?") for p in speed_results)
+
+        speeds_sorted = sorted(
+            float(p.get("_speed_mbps", 0) or 0) for p in speed_results
+        )
+        if speeds_sorted:
+            n = len(speeds_sorted)
+
+            def _pct(arr: list[float], q: float) -> float:
+                idx = max(0, min(n - 1, int(round((n - 1) * q))))
+                return round(arr[idx], 2)
+
+            logger.info(
+                f"[stats] speed percentiles: "
+                f"p10={_pct(speeds_sorted, 0.10)} "
+                f"p25={_pct(speeds_sorted, 0.25)} "
+                f"p50={_pct(speeds_sorted, 0.50)} "
+                f"p75={_pct(speeds_sorted, 0.75)} "
+                f"p90={_pct(speeds_sorted, 0.90)} "
+                f"max={round(speeds_sorted[-1], 2)} "
+                f"(n={n})"
+            )
+        logger.info(f"[stats] protocols: {dict(proto_stats)}")
+        logger.info(f"[stats] countries top15: {country_stats.most_common(15)}")
+        logger.info(f"[stats] sources top15: {src_stats.most_common(15)}")
 
     if cache_enabled:
         cache_data = update_after_run(
@@ -166,6 +220,14 @@ async def run_core_pipeline(
             float(cache_cfg.get("ban_duration_hours", 2)),
         )
         save_cache(cache_path, cache_data)
+        banned_count = sum(
+            1 for v in cache_data.get("servers", {}).values()
+            if v.get("banned_until", 0) > 0
+        )
+        logger.info(
+            f"[cache] сохранён: {len(cache_data.get('servers', {}))} записей, "
+            f"активных банов: {banned_count}"
+        )
 
     min_speed = config["thresholds"]["min_speed_mbps"]
     profiles = config.get("subscription_profiles", [])

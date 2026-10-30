@@ -406,12 +406,12 @@ def expand_representatives(
 
     Логика: сервер протестирован один раз (по representative), но если
     у него есть другие fp — добавляем их как «запасные ключи». При блокировке
-    одного отпечатка DPI клиент переберёт остальные. Тесты доступности
+    одного отпечатка клиент переберёт остальные. Тесты доступности
     (TCP/service/speed) от fp зависят слабо, поэтому не тестируем каждый
     вариант отдельно — это утроило бы время пайплайна без ощутимой пользы.
 
-    - max_fp_variants=1 → старое поведение (только representative).
-    - max_fp_variants=3 → rep + до 2 альтернативных fp.
+    - max_fp_variants=1 → только representative.
+    - max_fp_variants=3 → representative + до 2 альтернативных fp.
     """
     if max_fp_variants <= 1:
         return list(representatives)

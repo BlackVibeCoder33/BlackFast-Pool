@@ -197,8 +197,7 @@ def build_profiles(
             f"{len(selected)} серверов [{source_str}]{excluded_str}"
         )
 
-    # Источники, не давшие ни одного сервера ни в один профиль — мусорные.
-    # Полезно для чистки config.yaml после расширения пула.
+    # Источники, не давшие ни одного сервера ни в один профиль.
     all_sources: set[str] = set()
     for p in proxies:
         s = p.get("_source")
