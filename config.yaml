@@ -19,12 +19,9 @@ subscriptions:
     url: "https://raw.githubusercontent.com/Maskkost93/kizyak-vpn-4.0/main/kizyakbeta7.txt"
     enabled: true
 
-  # --- HIZTIN ---
+  # --- HIZTIN (только эффективные) ---
   - name: "hiztin-1"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/1.txt"
-    enabled: true
-  - name: "hiztin-2"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/2.txt"
     enabled: true
   - name: "hiztin-3"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/3.txt"
@@ -35,29 +32,8 @@ subscriptions:
   - name: "hiztin-6"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/6.txt"
     enabled: true
-  - name: "hiztin-7"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/7.txt"
-    enabled: true
-  - name: "hiztin-11"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/11.txt"
-    enabled: true
-  - name: "hiztin-13"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/13.txt"
-    enabled: true
-  - name: "hiztin-14"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/14.txt"
-    enabled: true
-  - name: "hiztin-17"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/17.txt"
-    enabled: true
-  - name: "hiztin-21"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/21.txt"
-    enabled: true
   - name: "hiztin-22"
     url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/22.txt"
-    enabled: true
-  - name: "hiztin-25"
-    url: "https://raw.githubusercontent.com/hiztin/VLESS-PO-GRIBI/main/deploy/subscriptions/25.txt"
     enabled: true
 
   # --- FLAT447 ---
@@ -73,26 +49,22 @@ subscriptions:
     url: "https://raw.githubusercontent.com/aviamastersgh/vpn-free-russia/main/all_configs.txt"
     enabled: true
 
-  # --- WLUNLOCKER ---
-  - name: "wlunlocker-blacklist"
-    url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_all.txt"
-    enabled: true
+  # --- WLUNLOCKER (только vpn2) ---
   - name: "wlunlocker-vpn2"
     url: "https://raw.githubusercontent.com/wlunlocker/vpn-configs/main/blacklist_vpn2.txt"
     enabled: true
 
-  # --- AETRISVPN / ROOSTERKID / KAMAJI / V2RAYROOT ---
+  # --- AETRISVPN / V2RAYROOT ---
   - name: "aetrisvpn-blacklist"
     url: "https://raw.githubusercontent.com/flaafix/AetrisVPN-black-list/refs/heads/main/configs.txt"
     enabled: true
-  - name: "roosterkid-v2ray"
-    url: "https://raw.githubusercontent.com/roosterkid/openproxylist/refs/heads/main/V2RAY_RAW.txt"
-    enabled: true
-  - name: "shabane-kamaji"
-    url: "https://raw.githubusercontent.com/shabane/kamaji/master/hub/self/tested/merged.txt"
-    enabled: true
   - name: "v2rayroot-ss"
     url: "https://raw.githubusercontent.com/V2RayRoot/V2RayConfig/refs/heads/main/Config/shadowsocks.txt"
+    enabled: true
+
+  # --- HAMEDCODE ---
+  - name: "hamedcode-vless"
+    url: "https://raw.githubusercontent.com/hamedcode/port-based-v2ray-configs/main/sub/vless.txt"
     enabled: true
 
 thresholds:
@@ -129,7 +101,7 @@ subscription_profiles:
     required_services:
       - telegram
       - youtube
-    min_speed_mbps: 15
+    min_speed_mbps: 12
     exclude_name_contains:
       - "deep-links.com"
       - "fastervpn"
@@ -141,7 +113,7 @@ subscription_profiles:
       - telegram
       - youtube
       - instagram
-    min_speed_mbps: 15
+    min_speed_mbps: 12
 
     exclude_name_contains:
       - "deep-links.com"
@@ -155,14 +127,14 @@ subscription_profiles:
       - youtube
       - instagram
       - chatgpt
-    min_speed_mbps: 15
+    min_speed_mbps: 12
   - name: "BlackFast FlashScore"
     path: "flashscore"
     filename: "Global-BlackFast-FlashScore.yaml"
     group_prefix: "BlackFast FlashScore"
     required_services:
       - flashscore
-    min_speed_mbps: 15
+    min_speed_mbps: 12
     allow_russian: true
 
     exclude_name_contains:
@@ -222,7 +194,7 @@ subscription_profiles:
     required_services:
       - telegram
       - youtube
-    min_speed_mbps: 50
+    min_speed_mbps: 28
 
     exclude_name_contains:
       - "deep-links.com"
@@ -235,7 +207,7 @@ subscription_profiles:
       - telegram
       - youtube
       - instagram
-    min_speed_mbps: 50
+    min_speed_mbps: 28
 
     exclude_name_contains:
       - "deep-links.com"
@@ -249,7 +221,7 @@ subscription_profiles:
       - youtube
       - instagram
       - chatgpt
-    min_speed_mbps: 50
+    min_speed_mbps: 28
   - name: "BlackFast TG+FlashScore HS"
     path: "tg-flashscore-hs"
     filename: "Global-BlackFast-TG-FlashScore-HS.yaml"
@@ -257,7 +229,7 @@ subscription_profiles:
     required_services:
       - telegram
       - flashscore
-    min_speed_mbps: 50
+    min_speed_mbps: 32
     karing_only: true
     exclude_name_contains:
       - "deep-links.com"
@@ -269,7 +241,7 @@ subscription_profiles:
     required_services:
       - telegram
       - flashscore
-    min_speed_mbps: 15
+    min_speed_mbps: 12
     karing_only: true
     exclude_name_contains:
       - "deep-links.com"
@@ -295,23 +267,23 @@ services:
   youtube:
     url: "https://www.youtube.com/generate_204"
     expect_status: 204
-    timeout_seconds: 7
+    timeout_seconds: 5
   instagram:
     url: "https://www.instagram.com/robots.txt"
     expect_status: 200
-    timeout_seconds: 7
+    timeout_seconds: 5
   telegram:
     url: "https://web.telegram.org/"
     expect_status: 200
-    timeout_seconds: 7
+    timeout_seconds: 5
   chatgpt:
     url: "https://chatgpt.com/cdn-cgi/trace"
     expect_status: 200
-    timeout_seconds: 7
+    timeout_seconds: 5
   flashscore:
     url: "https://www.flashscorekz.com/"
     expect_status: 200
-    timeout_seconds: 7
+    timeout_seconds: 5
 
 schedule:
   update_interval_minutes: 60
@@ -321,27 +293,26 @@ http_server:
   port: 8080
 
 tcp_check:
-  concurrent: 200
+  concurrent: 100
   timeout_seconds: 4
 
 service_check:
-  concurrent_pc: 6
+  concurrent_pc: 12
   concurrent_github: 8
   retry_on_connect_error: true
 
 speed_test:
-  concurrent_pc: 6
+  concurrent_pc: 4
   concurrent_github: 8
   test_urls:
-    # Официальный Android SDK-архив Google, ~60 МБ. Стабилен для CI-тестов.
-    - "https://dl.google.com/android/repository/platform-27_r03.zip"
-    # Cloudflare speed-test как fallback
+    - "https://dl.google.com/android/repository/platform-28_r06.zip"
     - "https://speed.cloudflare.com/__down?bytes=10000000"
-  timeout_seconds: 40
+    - "https://speed.cloudflare.com/__down?bytes=25000000"
+  timeout_seconds: 45
   retest_count: 2
   retest_pause_seconds: 2
-  min_measure_bytes: 5000000
-  peak_window_seconds: 0.5
+  min_measure_bytes: 1000000
+  peak_window_seconds: 0.3
 
 cache:
   enabled: true
