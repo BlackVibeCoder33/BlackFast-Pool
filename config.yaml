@@ -67,13 +67,19 @@ thresholds_by_type:
   hysteria2:
     max_service_latency_ms: 2000
 
-# Сколько вариантов одного сервера с РАЗНЫМИ client-fingerprint
-# отдавать в подписку. 1 = только representative. 3 = representative
-# + до 2 «запасных» fp: если один отпечаток заблокирован,
-# клиент переберёт остальные. Тесты (TCP/service/speed) идут
-# только по representative.
+# Один сервер = один client-fingerprint. Ключ дедупа — 
+# type:server:port:auth:cipher (без fp). При коллизии выбирается 
+# лучший fp по приоритету: chrome > safari > firefox > ios > edge > 
+# android > 360 > qq > random. Значение 1 = expand_representatives 
+# не размножает записи.
 dedupe:
-  max_fp_variants: 3
+  max_fp_variants: 1
+
+# Типы прокси, которые НЕ попадают в подписки вообще (отсеиваются 
+# после парсинга, до TCP/service/speed-тестов — экономит время прогона).
+# ss — Shadowsocks: нет uTLS-fp, через DPI МТС/Йота нестабилен.
+exclude_types:
+  - "ss"
 
 anti_dpi:
   enabled: true
