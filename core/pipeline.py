@@ -50,7 +50,10 @@ async def run_core_pipeline(
     logger.info("=" * 60)
     t_start = time.time()
 
-    proxies_all = await fetch_all(config["subscriptions"])
+    proxies_all = await fetch_all(
+        config["subscriptions"],
+        exclude_types=config.get("exclude_types", []),
+    )
     logger.info(f"[1] После парсинга: {len(proxies_all)}")
     ru_after_parse = sum(1 for p in proxies_all if p.get("_is_russian"))
     logger.info(f"[1] РФ-серверов после парсинга: {ru_after_parse}")

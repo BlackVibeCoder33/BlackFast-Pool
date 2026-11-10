@@ -296,13 +296,35 @@ def _is_russian_proxy(proxy: dict[str, Any]) -> bool:
     return any(pattern.search(name) for pattern in _RU_NAME_PATTERNS)
 
 
+# Приоритет client-fingerprint по надёжности против DPI.
+# chrome — самый распространённый браузер, DPI пропускает его как 
+# обычный HTTPS-трафик. safari — Apple, на мобильных сетях РФ выглядит 
+# как iPhone. random/randomized — каждый коннект новый отпечаток, 
+# выглядит как бот, поэтому низкий приоритет.
+_FP_PRIORITY = [
+    "chrome", "safari", "firefox", "ios", "edge",
+    "android", "360", "qq", "random", "randomized",
+]
+
+
+def _fp_score(fp: str) -> int:
+    """Чем выше скор — тем предпочтительнее fp. Пустой fp = 0."""
+    if not fp:
+        return 0
+    fp_l = fp.strip().lower()
+    try:
+        return len(_FP_PRIORITY) - _FP_PRIORITY.index(fp_l)
+    except ValueError:
+        # Неизвестный fp — пропускаем только если других нет
+        return 1
+
+
 def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
-    Глобальная дедупликация.
-    Сравнивает сервера по: Тип + Сервер + Порт + UUID/Пароль + Шифр +
-    client-fingerprint. Одинаковый сервер с РАЗНЫМИ отпечатками uTLS —
-    это НЕ дубликат, а альтернативный «ключ» к тому же серверу:
-    если DPI забанит один отпечаток, клиент переберёт другой.
+    Глобальная дедупликация: один сервер = одна запись.
+    Ключ — type:server:port:auth:cipher (БЕЗ client-fingerprint).
+    Из группы дублей с одинаковым ключом выбирается ОДИН 
+    выживший с лучшим fp по приоритету _FP_PRIORITY.
 
     Гео-подсказки и РФ-флаг из дублей переносятся на выжившего:
     - `_is_russian` ставится, если хотя бы один дубль был русским;
@@ -310,16 +332,18 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """
     by_key: dict[str, dict[str, Any]] = {}
     dupes = 0
+    fp_upgraded = 0
     for p in proxies:
         server = str(p.get("server", "")).lower()
         port = str(p.get("port", ""))
         ptype = str(p.get("type", ""))
         auth = str(p.get("uuid") or p.get("password") or "")
         cipher = str(p.get("cipher", ""))
+        name = str(p.get("name") or "").strip()
         fp = str(p.get("client-fingerprint") or "")
 
-        key = f"{ptype}:{server}:{port}:{auth}:{cipher}:{fp}"
-        name = str(p.get("name") or "").strip()
+        # fp НЕ входит в ключ — один server:port = одна запись.
+        key = f"{ptype}:{server}:{port}:{auth}:{cipher}"
 
         if key in by_key:
             dupes += 1
@@ -330,6 +354,11 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
                     names.append(name)
             if p.get("_is_russian"):
                 survivor["_is_russian"] = True
+            # Выбираем лучший fp из группы
+            cur_fp = str(survivor.get("client-fingerprint") or "")
+            if _fp_score(fp) > _fp_score(cur_fp):
+                survivor["client-fingerprint"] = fp or None
+                fp_upgraded += 1
             continue
 
         p["_all_names"] = [name] if name else []
@@ -338,11 +367,14 @@ def _dedupe(proxies: list[dict[str, Any]]) -> list[dict[str, Any]]:
     unique = list(by_key.values())
     logger.info(
         f"Глобальная дедупликация: {len(proxies)} -> {len(unique)} "
-        f"(убрано {dupes} дублей)"
+        f"(убрано {dupes} дублей, fp улучшено у {fp_upgraded} записей)"
     )
     return unique
 
-async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+async def fetch_all(
+    subscriptions: list[dict[str, Any]],
+    exclude_types: list[str] | None = None,
+) -> list[dict[str, Any]]:
     active = [s for s in subscriptions if s.get("enabled", True)]
     if not active:
         logger.warning("Нет включённых подписок")
@@ -366,6 +398,21 @@ async def fetch_all(subscriptions: list[dict[str, Any]]) -> list[dict[str, Any]]
         if _is_russian_proxy(p):
             p["_is_russian"] = True
             ru_before += 1
+
+    # Отсев по типу протокола (до дедупа и тестов — экономит время)
+    exclude_set = {str(t).strip().lower() for t in (exclude_types or []) if t}
+    if exclude_set:
+        before = len(all_proxies)
+        all_proxies = [
+            p for p in all_proxies
+            if str(p.get("type", "")).strip().lower() not in exclude_set
+        ]
+        excluded = before - len(all_proxies)
+        if excluded:
+            logger.info(
+                f"Исключено по типу {sorted(exclude_set)}: {excluded} "
+                f"(осталось {len(all_proxies)})"
+            )
 
     deduped = _dedupe(all_proxies)
 
